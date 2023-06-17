@@ -615,8 +615,7 @@ class RimeStringSlice {
 
 class RimeApi {
     __New() {
-        this.rimeModule := DllCall("LoadLibrary", "Str", "rime.dll", "Ptr")
-        if not this.rimeModule {
+        if not RimeApi.rimeDll {
             MsgBox("未找到 rime.dll！", "错误")
             ExitApp(1)
         }
@@ -632,10 +631,8 @@ class RimeApi {
             ExitApp(1)
         }
     }
-    __Delete() {
-        DllCall("FreeLibrary", "Ptr", this.rimeModule)
-    }
 
+    static rimeDll := DllCall("LoadLibrary", "Str", "rime.dll", "Ptr")
     static min_version() {
         return "1.8.5"
     }
@@ -662,6 +659,7 @@ class RimeApi {
     ; () => void
     finalize() {
         DllCall(NumGet(this.api, 16, "Ptr"), "Cdecl")
+        DllCall("FreeLibrary", "Ptr", RimeApi.rimeDll)
     }
 
     ; (Int) => Int
