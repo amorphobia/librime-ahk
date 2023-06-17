@@ -346,18 +346,15 @@ class RimeContext {
 } ; RimeContext
 
 class RimeStatus {
-    __New(schema_id := "", schema_name := "", is_disabled := 0, is_composing := 0, is_ascii_mode := 0, is_full_shape := 0, is_simplified := 0, is_traditional := 0, is_ascii_punct := 0) {
+    __New(ptr := 0) {
         this.buff := Buffer(RimeStatus.size())
         this.data_size := RimeStatus.size() - INT_SIZE()
-        ; this.schema_id := schema_id
-        ; this.schema_name := schema_name
-        ; this.is_disabled := is_disabled
-        ; this.is_composing := is_composing
-        ; this.is_ascii_mode := is_ascii_mode
-        ; this.is_full_shape := is_full_shape
-        ; this.is_simplified := is_simplified
-        ; this.is_traditional := is_traditional
-        ; this.is_ascii_punct := is_ascii_punct
+        if ptr {
+            Loop RimeStatus.size() {
+                byte := NumGet(ptr, A_Index - 1, "Char")
+                NumPut("Char", byte, this.buff, A_Index - 1)
+            }
+        }
     }
 
     static size() {
@@ -629,9 +626,18 @@ class RimeApi {
             MsgBox("获取 Rime API 失败！", "错误")
             ExitApp(1)
         }
+
+        if VerCompare(this.get_version(), RimeApi.min_version()) < 0 {
+            MsgBox("Librime 版本过低，请使用 1.8.5 及以上版本。", "错误")
+            ExitApp(1)
+        }
     }
     __Delete() {
         DllCall("FreeLibrary", "Ptr", this.rimeModule)
+    }
+
+    static min_version() {
+        return "1.8.5"
     }
 
     data_size {
