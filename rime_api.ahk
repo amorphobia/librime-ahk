@@ -29,12 +29,12 @@ UTF8Buffer(text) {
     }
     return buf
 }
-StructStrGet(src, offset) {
+UTF8StrGet(src, offset) {
     if p := NumGet(src, offset, "Ptr")
         return StrGet(p, "UTF-8")
     return ""
 }
-StructStrPut(val, tgt, offset) {
+UTF8StrPut(val, tgt, offset) {
     buf := UTF8Buffer(val)
     NumPut("Ptr", buf.Ptr, tgt, offset)
     return buf
@@ -91,28 +91,28 @@ class RimeTraits {
         set => NumPut("Int", Value, this.buff, RimeTraits.data_size_offset())
     }
     shared_data_dir {
-        get => StructStrGet(this.buff.Ptr, RimeTraits.shared_data_dir_offset())
-        set => this.__shared_data_dir := StructStrPut(Value, this.buff.Ptr, RimeTraits.shared_data_dir_offset())
+        get => UTF8StrGet(this.buff.Ptr, RimeTraits.shared_data_dir_offset())
+        set => this.__shared_data_dir := UTF8StrPut(Value, this.buff.Ptr, RimeTraits.shared_data_dir_offset())
     }
     user_data_dir {
-        get => StructStrGet(this.buff.Ptr, RimeTraits.user_data_dir_offset())
-        set => this.__user_data_dir := StructStrPut(Value, this.buff.Ptr, RimeTraits.user_data_dir_offset())
+        get => UTF8StrGet(this.buff.Ptr, RimeTraits.user_data_dir_offset())
+        set => this.__user_data_dir := UTF8StrPut(Value, this.buff.Ptr, RimeTraits.user_data_dir_offset())
     }
     distribution_name {
-        get => StructStrGet(this.buff.Ptr, RimeTraits.distribution_name_offset())
-        set => this.__distribution_name := StructStrPut(Value, this.buff.Ptr, RimeTraits.distribution_name_offset())
+        get => UTF8StrGet(this.buff.Ptr, RimeTraits.distribution_name_offset())
+        set => this.__distribution_name := UTF8StrPut(Value, this.buff.Ptr, RimeTraits.distribution_name_offset())
     }
     distribution_code_name {
-        get => StructStrGet(this.buff.Ptr, RimeTraits.distribution_code_name_offset())
-        set => this.__distribution_code_name := StructStrPut(Value, this.buff.Ptr, RimeTraits.distribution_code_name_offset())
+        get => UTF8StrGet(this.buff.Ptr, RimeTraits.distribution_code_name_offset())
+        set => this.__distribution_code_name := UTF8StrPut(Value, this.buff.Ptr, RimeTraits.distribution_code_name_offset())
     }
     distribution_version {
-        get => StructStrGet(this.buff.Ptr, RimeTraits.distribution_version_offset())
-        set => this.__distribution_version := StructStrPut(Value, this.buff.Ptr, RimeTraits.distribution_version_offset())
+        get => UTF8StrGet(this.buff.Ptr, RimeTraits.distribution_version_offset())
+        set => this.__distribution_version := UTF8StrPut(Value, this.buff.Ptr, RimeTraits.distribution_version_offset())
     }
     app_name {
-        get => StructStrGet(this.buff.Ptr, RimeTraits.app_name_offset())
-        set => this.__app_name := StructStrPut(Value, this.buff.Ptr, RimeTraits.app_name_offset())
+        get => UTF8StrGet(this.buff.Ptr, RimeTraits.app_name_offset())
+        set => this.__app_name := UTF8StrPut(Value, this.buff.Ptr, RimeTraits.app_name_offset())
     }
     ; modules
     min_log_level {
@@ -120,16 +120,16 @@ class RimeTraits {
         set => NumPut("Int", Value, this.buff, RimeTraits.min_log_level_offset())
     }
     log_dir {
-        get => StructStrGet(this.buff.Ptr, RimeTraits.log_dir_offset())
-        set => this.__log_dir := StructStrPut(Value, this.buff.Ptr, RimeTraits.log_dir_offset())
+        get => UTF8StrGet(this.buff.Ptr, RimeTraits.log_dir_offset())
+        set => this.__log_dir := UTF8StrPut(Value, this.buff.Ptr, RimeTraits.log_dir_offset())
     }
     prebuilt_data_dir {
-        get => StructStrGet(this.buff.Ptr, RimeTraits.prebuilt_data_dir_offset())
-        set => this.__prebuilt_data_dir := StructStrPut(Value, this.buff.Ptr, RimeTraits.prebuilt_data_dir_offset())
+        get => UTF8StrGet(this.buff.Ptr, RimeTraits.prebuilt_data_dir_offset())
+        set => this.__prebuilt_data_dir := UTF8StrPut(Value, this.buff.Ptr, RimeTraits.prebuilt_data_dir_offset())
     }
     staging_dir {
-        get => StructStrGet(this.buff.Ptr, RimeTraits.staging_dir_offset())
-        set => this.__staging_dir := StructStrPut(Value, this.buff.Ptr, RimeTraits.staging_dir_offset())
+        get => UTF8StrGet(this.buff.Ptr, RimeTraits.staging_dir_offset())
+        set => this.__staging_dir := UTF8StrPut(Value, this.buff.Ptr, RimeTraits.staging_dir_offset())
     }
 } ; RimeTraits
 
@@ -176,7 +176,7 @@ class RimeComposition {
         get => NumGet(this.buff, RimeComposition.sel_end_offset(), "Int")
     }
     preedit {
-        get => StructStrGet(this.buff.Ptr, RimeComposition.preedit_offset())
+        get => UTF8StrGet(this.buff.Ptr, RimeComposition.preedit_offset())
     }
 } ; RimeComposition
 
@@ -202,10 +202,10 @@ class RimeCandidate {
     }
 
     text {
-        get => StructStrGet(this.buff.Ptr, RimeCandidate.text_offset())
+        get => UTF8StrGet(this.buff.Ptr, RimeCandidate.text_offset())
     }
     comment {
-        get => StructStrGet(this.buff.Ptr, RimeCandidate.comment_offset())
+        get => UTF8StrGet(this.buff.Ptr, RimeCandidate.comment_offset())
     }
 } ; RimeCandidate
 
@@ -273,7 +273,7 @@ class RimeMenu {
         }
     }
     select_keys {
-        get => StructStrGet(this.buff.Ptr, RimeMenu.select_keys_offset())
+        get => UTF8StrGet(this.buff.Ptr, RimeMenu.select_keys_offset())
     }
 } ; RimeMenu
 
@@ -304,7 +304,7 @@ class RimeCommit {
         set => NumPut("Int", Value, this.buff, RimeCommit.data_size_offset())
     }
     text {
-        get => StructStrGet(this.buff.Ptr, RimeCommit.text_offset())
+        get => UTF8StrGet(this.buff.Ptr, RimeCommit.text_offset())
     }
 } ; RimeCommit
 
@@ -396,10 +396,10 @@ class RimeStatus {
         set => NumPut("Int", Value, this.buff, RimeStatus.data_size_offset())
     }
     schema_id {
-        get => StructStrGet(this.buff.Ptr, RimeStatus.schema_id_offset())
+        get => UTF8StrGet(this.buff.Ptr, RimeStatus.schema_id_offset())
     }
     schema_name {
-        get => StructStrGet(this.buff.Ptr, RimeStatus.schema_name_offset())
+        get => UTF8StrGet(this.buff.Ptr, RimeStatus.schema_name_offset())
     }
     is_disabled {
         get => NumGet(this.buff, RimeStatus.is_disabled_offset(), "Int")
@@ -513,10 +513,10 @@ class RimeConfigIterator {
         get => NumGet(this.buff, RimeConfigIterator.index_offset(), "Int")
     }
     key {
-        get => StructStrGet(this.buff.Ptr, RimeConfigIterator.key_offset())
+        get => UTF8StrGet(this.buff.Ptr, RimeConfigIterator.key_offset())
     }
     path {
-        get => StructStrGet(this.buff.Ptr, RimeConfigIterator.path_offset())
+        get => UTF8StrGet(this.buff.Ptr, RimeConfigIterator.path_offset())
     }
 }
 
@@ -542,10 +542,10 @@ class RimeSchemaListItem {
     }
 
     schema_id {
-        get => StructStrGet(this.buff.Ptr, RimeSchemaListItem.schema_id_offset())
+        get => UTF8StrGet(this.buff.Ptr, RimeSchemaListItem.schema_id_offset())
     }
     name {
-        get => StructStrGet(this.buff.Ptr, RimeSchemaListItem.name_offset())
+        get => UTF8StrGet(this.buff.Ptr, RimeSchemaListItem.name_offset())
     }
 } ; RimeSchemaListItem
 
@@ -603,7 +603,7 @@ class RimeStringSlice {
     }
 
     str {
-        get => StructStrGet(this.buff.Ptr, RimeStringSlice.str_offset())
+        get => UTF8StrGet(this.buff.Ptr, RimeStringSlice.str_offset())
     }
     length {
         get => NumGet(this.buff, RimeStringSlice.length_offset(), "UInt")
