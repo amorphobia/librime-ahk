@@ -24,7 +24,7 @@ INT_SIZE() {
 UTF8Buffer(text) {
     buf := Buffer()
     if text {
-        buf := Buffer(StrPut(text, "UTF-8"))
+        buf := Buffer(StrPut(text, "UTF-8"), 0)
         StrPut(text, buf, "UTF-8")
     }
     return buf
@@ -42,7 +42,7 @@ UTF8StrPut(val, tgt, offset) {
 
 class RimeTraits {
     __New() {
-        this.buff := Buffer(RimeTraits.size())
+        this.buff := Buffer(RimeTraits.size(), 0)
         this.data_size := RimeTraits.size() - INT_SIZE()
     }
 
@@ -135,7 +135,7 @@ class RimeTraits {
 
 class RimeComposition {
     __New(ptr := 0) {
-        this.buff := Buffer(RimeComposition.size())
+        this.buff := Buffer(RimeComposition.size(), 0)
         if ptr {
             Loop RimeComposition.size() {
                 byte := NumGet(ptr, A_Index - 1, "Char")
@@ -182,7 +182,7 @@ class RimeComposition {
 
 class RimeCandidate {
     __New(ptr := 0) {
-        this.buff := Buffer(RimeCandidate.size())
+        this.buff := Buffer(RimeCandidate.size(), 0)
         if ptr {
             Loop RimeCandidate.size() {
                 byte := NumGet(ptr, A_Index - 1, "Char")
@@ -211,7 +211,7 @@ class RimeCandidate {
 
 class RimeMenu {
     __New(ptr := 0) {
-        this.buff := Buffer(RimeMenu.size())
+        this.buff := Buffer(RimeMenu.size(), 0)
         if ptr {
             Loop RimeMenu.size() {
                 byte := NumGet(ptr, A_Index - 1, "Char")
@@ -279,7 +279,7 @@ class RimeMenu {
 
 class RimeCommit {
     __New(ptr := 0) {
-        this.buff := Buffer(RimeCommit.size())
+        this.buff := Buffer(RimeCommit.size(), 0)
         this.data_size := RimeCommit.size() - INT_SIZE()
         if ptr {
             Loop RimeCommit.size() {
@@ -310,7 +310,7 @@ class RimeCommit {
 
 class RimeContext {
     __New() {
-        this.buff := Buffer(RimeContext.size())
+        this.buff := Buffer(RimeContext.size(), 0)
         this.data_size := RimeContext.size() - INT_SIZE()
     }
 
@@ -347,7 +347,7 @@ class RimeContext {
 
 class RimeStatus {
     __New(ptr := 0) {
-        this.buff := Buffer(RimeStatus.size())
+        this.buff := Buffer(RimeStatus.size(), 0)
         this.data_size := RimeStatus.size() - INT_SIZE()
         if ptr {
             Loop RimeStatus.size() {
@@ -426,7 +426,7 @@ class RimeStatus {
 
 class RimeCandidateListIterator {
     __New() {
-        this.buff := Buffer(RimeCandidateListIterator.size())
+        this.buff := Buffer(RimeCandidateListIterator.size(), 0)
     }
 
     static size() {
@@ -452,7 +452,7 @@ class RimeCandidateListIterator {
 
 class RimeConfig {
     __New(ptr := 0) {
-        this.buff := Buffer(RimeConfig.size())
+        this.buff := Buffer(RimeConfig.size(), 0)
         if ptr {
             Loop RimeConfig.size() {
                 byte := NumGet(ptr, A_Index - 1, "Char")
@@ -475,7 +475,7 @@ class RimeConfig {
 
 class RimeConfigIterator {
     __New(ptr := 0) {
-        this.buff := Buffer(RimeConfigIterator.size())
+        this.buff := Buffer(RimeConfigIterator.size(), 0)
         if ptr {
             Loop RimeConfigIterator.size() {
                 byte := NumGet(ptr, A_Index - 1, "Char")
@@ -522,7 +522,7 @@ class RimeConfigIterator {
 
 class RimeSchemaListItem {
     __New(ptr := 0) {
-        this.buff := Buffer(RimeSchemaListItem.size())
+        this.buff := Buffer(RimeSchemaListItem.size(), 0)
         if ptr {
             Loop RimeSchemaListItem.size() {
                 byte := NumGet(ptr, A_Index - 1, "Char")
@@ -551,7 +551,7 @@ class RimeSchemaListItem {
 
 class RimeSchemaList {
     __New(size := 0, list := Array()) {
-        this.buff := Buffer(RimeSchemaList.size())
+        this.buff := Buffer(RimeSchemaList.size(), 0)
     }
 
     static size() {
@@ -583,7 +583,7 @@ class RimeSchemaList {
 
 class RimeStringSlice {
     __New(ptr := 0) {
-        this.buff := Buffer(RimeStringSlice.size())
+        this.buff := Buffer(RimeStringSlice.size(), 0)
         if ptr {
             Loop RimeStringSlice.size() {
                 byte := NumGet(ptr, A_Index - 1, "Char")
@@ -881,7 +881,7 @@ class RimeApi {
 
     ; (UInt) => Str
     get_user_data_sync_dir(buffer_size) {
-        buf := Buffer(buffer_size)
+        buf := Buffer(buffer_size, 0)
         DllCall(NumGet(this.api, 224, "Ptr"), "Ptr", buf.Ptr, "UInt", buffer_size, "Cdecl")
         return StrGet(buf.Ptr, "UTF-8")
     }
