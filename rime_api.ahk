@@ -550,7 +550,7 @@ class RimeSchemaListItem {
 } ; RimeSchemaListItem
 
 class RimeSchemaList {
-    __New(size := 0, list := Array()) {
+    __New() {
         this.buff := Buffer(RimeSchemaList.size(), 0)
     }
 
