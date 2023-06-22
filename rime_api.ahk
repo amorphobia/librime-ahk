@@ -20,6 +20,9 @@
 INT_SIZE() {
     return 4
 }
+DEFAULT_BUFFER_SIZE() {
+    return 512
+}
 
 UTF8Buffer(text) {
     buf := Buffer()
@@ -42,49 +45,23 @@ UTF8StrPut(val, tgt, offset) {
 
 class RimeTraits {
     __New() {
-        this.buff := Buffer(RimeTraits.size(), 0)
-        this.data_size := RimeTraits.size() - INT_SIZE()
+        this.buff := Buffer(RimeTraits.buffer_size(), 0)
+        this.data_size := RimeTraits.buffer_size() - INT_SIZE()
     }
 
-    static size() {
-        return 48
-    }
-    static data_size_offset() {
-        return 0
-    }
-    static shared_data_dir_offset() {
-        return RimeTraits.data_size_offset() + INT_SIZE()
-    }
-    static user_data_dir_offset() {
-        return RimeTraits.shared_data_dir_offset() + A_PtrSize
-    }
-    static distribution_name_offset() {
-        return RimeTraits.user_data_dir_offset() + A_PtrSize
-    }
-    static distribution_code_name_offset() {
-        return RimeTraits.distribution_name_offset() + A_PtrSize
-    }
-    static distribution_version_offset() {
-        return RimeTraits.distribution_code_name_offset() + A_PtrSize
-    }
-    static app_name_offset() {
-        return RimeTraits.distribution_version_offset() + A_PtrSize
-    }
-    static modules_offset() {
-        return RimeTraits.app_name_offset() + A_PtrSize
-    }
-    static min_log_level_offset() {
-        return RimeTraits.modules_offset() + A_PtrSize
-    }
-    static log_dir_offset() {
-        return RimeTraits.min_log_level_offset() + INT_SIZE()
-    }
-    static prebuilt_data_dir_offset() {
-        return RimeTraits.log_dir_offset() + A_PtrSize
-    }
-    static staging_dir_offset() {
-        return RimeTraits.prebuilt_data_dir_offset() + A_PtrSize
-    }
+    static data_size_offset := (*) => 0
+    static shared_data_dir_offset := (*) => RimeTraits.data_size_offset() + INT_SIZE()
+    static user_data_dir_offset := (*) => RimeTraits.shared_data_dir_offset() + A_PtrSize
+    static distribution_name_offset := (*) => RimeTraits.user_data_dir_offset() + A_PtrSize
+    static distribution_code_name_offset := (*) => RimeTraits.distribution_name_offset() + A_PtrSize
+    static distribution_version_offset := (*) => RimeTraits.distribution_code_name_offset() + A_PtrSize
+    static app_name_offset := (*) => RimeTraits.distribution_version_offset() + A_PtrSize
+    static modules_offset := (*) => RimeTraits.app_name_offset() + A_PtrSize
+    static min_log_level_offset := (*) => RimeTraits.modules_offset() + A_PtrSize
+    static log_dir_offset := (*) => RimeTraits.min_log_level_offset() + INT_SIZE()
+    static prebuilt_data_dir_offset := (*) => RimeTraits.log_dir_offset() + A_PtrSize
+    static staging_dir_offset := (*) => RimeTraits.prebuilt_data_dir_offset() + A_PtrSize
+    static buffer_size := (*) => RimeTraits.staging_dir_offset() + A_PtrSize
 
     data_size {
         get => NumGet(this.buff, RimeTraits.data_size_offset(), "Int")
@@ -135,33 +112,21 @@ class RimeTraits {
 
 class RimeComposition {
     __New(ptr := 0) {
-        this.buff := Buffer(RimeComposition.size(), 0)
+        this.buff := Buffer(RimeComposition.buffer_size(), 0)
         if ptr {
-            Loop RimeComposition.size() {
+            Loop RimeComposition.buffer_size() {
                 byte := NumGet(ptr, A_Index - 1, "Char")
                 NumPut("Char", byte, this.buff, A_Index - 1)
             }
         }
     }
 
-    static size() {
-        return 20
-    }
-    static lenth_offset() {
-        return 0
-    }
-    static cursor_pos_offset() {
-        return RimeComposition.lenth_offset() + INT_SIZE()
-    }
-    static sel_start_offset() {
-        return RimeComposition.cursor_pos_offset() + INT_SIZE()
-    }
-    static sel_end_offset() {
-        return RimeComposition.sel_start_offset() + INT_SIZE()
-    }
-    static preedit_offset() {
-        return RimeComposition.sel_end_offset() + INT_SIZE()
-    }
+    static lenth_offset := (*) => 0
+    static cursor_pos_offset := (*) => RimeComposition.lenth_offset() + INT_SIZE()
+    static sel_start_offset := (*) => RimeComposition.cursor_pos_offset() + INT_SIZE()
+    static sel_end_offset := (*) => RimeComposition.sel_start_offset() + INT_SIZE()
+    static preedit_offset := (*) => RimeComposition.sel_end_offset() + INT_SIZE()
+    static buffer_size := (*) => RimeComposition.preedit_offset() + A_PtrSize
 
     length {
         get => NumGet(this.buff, RimeComposition.lenth_offset(), "Int")
@@ -182,24 +147,19 @@ class RimeComposition {
 
 class RimeCandidate {
     __New(ptr := 0) {
-        this.buff := Buffer(RimeCandidate.size(), 0)
+        this.buff := Buffer(RimeCandidate.buffer_size(), 0)
         if ptr {
-            Loop RimeCandidate.size() {
+            Loop RimeCandidate.buffer_size() {
                 byte := NumGet(ptr, A_Index - 1, "Char")
                 NumPut("Char", byte, this.buff, A_Index - 1)
             }
         }
     }
 
-    static size() {
-        return 12
-    }
-    static text_offset() {
-        return 0
-    }
-    static comment_offset() {
-        return RimeCandidate.text_offset() + A_PtrSize
-    }
+    static text_offset := (*) => 0
+    static comment_offset := (*) => RimeCandidate.text_offset() + A_PtrSize
+    static reserved_offset := (*) => RimeCandidate.comment_offset() + A_PtrSize
+    static buffer_size := (*) => RimeCandidate.reserved_offset() + A_PtrSize
 
     text {
         get => UTF8StrGet(this.buff.Ptr, RimeCandidate.text_offset())
@@ -211,39 +171,23 @@ class RimeCandidate {
 
 class RimeMenu {
     __New(ptr := 0) {
-        this.buff := Buffer(RimeMenu.size(), 0)
+        this.buff := Buffer(RimeMenu.buffer_size(), 0)
         if ptr {
-            Loop RimeMenu.size() {
+            Loop RimeMenu.buffer_size() {
                 byte := NumGet(ptr, A_Index - 1, "Char")
                 NumPut("Char", byte, this.buff, A_Index - 1)
             }
         }
     }
 
-    static size() {
-        return 28
-    }
-    static page_size_offset() {
-        return 0
-    }
-    static page_no_offset() {
-        return RimeMenu.page_size_offset() + INT_SIZE()
-    }
-    static is_last_page_offset() {
-        return RimeMenu.page_no_offset() + INT_SIZE()
-    }
-    static highlighted_candidate_index_offset() {
-        return RimeMenu.is_last_page_offset() + INT_SIZE()
-    }
-    static num_candidates_offset() {
-        return RimeMenu.highlighted_candidate_index_offset() + INT_SIZE()
-    }
-    static candidates_offset() {
-        return RimeMenu.num_candidates_offset() + INT_SIZE()
-    }
-    static select_keys_offset() {
-        return RimeMenu.candidates_offset() + A_PtrSize
-    }
+    static page_size_offset := (*) => 0
+    static page_no_offset := (*) => RimeMenu.page_size_offset() + INT_SIZE()
+    static is_last_page_offset := (*) => RimeMenu.page_no_offset() + INT_SIZE()
+    static highlighted_candidate_index_offset := (*) => RimeMenu.is_last_page_offset() + INT_SIZE()
+    static num_candidates_offset := (*) => RimeMenu.highlighted_candidate_index_offset() + INT_SIZE()
+    static candidates_offset := (*) => RimeMenu.num_candidates_offset() + INT_SIZE()
+    static select_keys_offset := (*) => RimeMenu.candidates_offset() + A_PtrSize
+    static buffer_size := (*) => RimeMenu.select_keys_offset() + A_PtrSize
 
     page_size {
         get => NumGet(this.buff, RimeMenu.page_size_offset(), "Int")
@@ -265,7 +209,7 @@ class RimeMenu {
             cands := Array()
             if p := NumGet(this.buff.Ptr, RimeMenu.candidates_offset(), "Ptr") {
                 Loop this.num_candidates {
-                    local ptr := p + (A_Index - 1) * RimeCandidate.size()
+                    local ptr := p + (A_Index - 1) * RimeCandidate.buffer_size()
                     cands.Push(RimeCandidate(ptr))
                 }
             }
@@ -279,25 +223,19 @@ class RimeMenu {
 
 class RimeCommit {
     __New(ptr := 0) {
-        this.buff := Buffer(RimeCommit.size(), 0)
-        this.data_size := RimeCommit.size() - INT_SIZE()
+        this.buff := Buffer(RimeCommit.buffer_size(), 0)
+        this.data_size := RimeCommit.buffer_size() - INT_SIZE()
         if ptr {
-            Loop RimeCommit.size() {
+            Loop RimeCommit.buffer_size() {
                 byte := NumGet(ptr, A_Index - 1, "Char")
                 NumPut("Char", byte, this.buff, A_Index - 1)
             }
         }
     }
 
-    static size() {
-        return 8
-    }
-    static data_size_offset() {
-        return 0
-    }
-    static text_offset() {
-        return RimeCommit.data_size_offset() + INT_SIZE()
-    }
+    static data_size_offset := (*) => 0
+    static text_offset := (*) => RimeCommit.data_size_offset() + INT_SIZE()
+    static buffer_size := (*) => RimeCommit.text_offset() + A_PtrSize
 
     data_size {
         get => NumGet(this.buff, RimeCommit.data_size_offset(), "Int")
@@ -314,9 +252,6 @@ class RimeContext {
         this.data_size := RimeContext.size() - INT_SIZE()
     }
 
-    static size() {
-        return 60
-    }
     static data_size_offset() {
         return 0
     }
@@ -324,13 +259,16 @@ class RimeContext {
         return RimeContext.data_size_offset() + INT_SIZE()
     }
     static menu_offset() {
-        return RimeContext.composition_offset() + RimeComposition.size()
+        return RimeContext.composition_offset() + RimeComposition.buffer_size()
     }
     static commit_text_preview_offset() {
-        return RimeContext.menu_offset() + RimeMenu.size()
+        return RimeContext.menu_offset() + RimeMenu.buffer_size()
     }
     static select_labels_offset() {
         return RimeContext.commit_text_preview_offset() + A_PtrSize
+    }
+    static size() {
+        return RimeContext.select_labels_offset() + A_PtrSize
     }
 
     data_size {
@@ -347,49 +285,27 @@ class RimeContext {
 
 class RimeStatus {
     __New(ptr := 0) {
-        this.buff := Buffer(RimeStatus.size(), 0)
-        this.data_size := RimeStatus.size() - INT_SIZE()
+        this.buff := Buffer(RimeStatus.buffer_size(), 0)
+        this.data_size := RimeStatus.buffer_size() - INT_SIZE()
         if ptr {
-            Loop RimeStatus.size() {
+            Loop RimeStatus.buffer_size() {
                 byte := NumGet(ptr, A_Index - 1, "Char")
                 NumPut("Char", byte, this.buff, A_Index - 1)
             }
         }
     }
 
-    static size() {
-        return 40
-    }
-    static data_size_offset() {
-        return 0
-    }
-    static schema_id_offset() {
-        return this.data_size_offset() + INT_SIZE()
-    }
-    static schema_name_offset() {
-        return this.schema_id_offset() + A_PtrSize
-    }
-    static is_disabled_offset() {
-        return this.schema_name_offset() + A_PtrSize
-    }
-    static is_composing_offset() {
-        return this.is_disabled_offset() + INT_SIZE()
-    }
-    static is_ascii_mode_offset() {
-        return this.is_composing_offset() + INT_SIZE()
-    }
-    static is_full_shape_offset() {
-        return this.is_ascii_mode_offset() + INT_SIZE()
-    }
-    static is_simplified_offset() {
-        return this.is_full_shape_offset() + INT_SIZE()
-    }
-    static is_traditional_offset() {
-        return this.is_simplified_offset() + INT_SIZE()
-    }
-    static is_ascii_punct_offset() {
-        return this.is_traditional_offset() + INT_SIZE()
-    }
+    static data_size_offset := (*) => 0
+    static schema_id_offset := (*) => RimeStatus.data_size_offset() + INT_SIZE()
+    static schema_name_offset := (*) => RimeStatus.schema_id_offset() + A_PtrSize
+    static is_disabled_offset := (*) => RimeStatus.schema_name_offset() + A_PtrSize
+    static is_composing_offset := (*) => RimeStatus.is_disabled_offset() + INT_SIZE()
+    static is_ascii_mode_offset := (*) => RimeStatus.is_composing_offset() + INT_SIZE()
+    static is_full_shape_offset := (*) => RimeStatus.is_ascii_mode_offset() + INT_SIZE()
+    static is_simplified_offset := (*) => RimeStatus.is_full_shape_offset() + INT_SIZE()
+    static is_traditional_offset := (*) => RimeStatus.is_simplified_offset() + INT_SIZE()
+    static is_ascii_punct_offset := (*) => RimeStatus.is_traditional_offset() + INT_SIZE()
+    static buffer_size := (*) => RimeStatus.is_ascii_punct_offset() + INT_SIZE()
 
     data_size {
         get => NumGet(this.buff, RimeStatus.data_size_offset(), "Int")
@@ -426,21 +342,13 @@ class RimeStatus {
 
 class RimeCandidateListIterator {
     __New() {
-        this.buff := Buffer(RimeCandidateListIterator.size(), 0)
+        this.buff := Buffer(RimeCandidateListIterator.buffer_size(), 0)
     }
 
-    static size() {
-        return 20
-    }
-    static ptr_offset() {
-        return 0
-    }
-    static index_offset() {
-        return RimeCandidateListIterator.ptr_offset() + A_PtrSize
-    }
-    static candidate_offset() {
-        return RimeCandidateListIterator.index_offset() + INT_SIZE()
-    }
+    static ptr_offset := (*) => 0
+    static index_offset := (*) => RimeCandidateListIterator.ptr_offset() + A_PtrSize
+    static candidate_offset := (*) => RimeCandidateListIterator.index_offset() + INT_SIZE()
+    static buffer_size := (*) => RimeCandidateListIterator.candidate_offset() + RimeCandidate.buffer_size()
 
     index {
         get => NumGet(this.buff, RimeCandidateListIterator.index_offset(), "Int")
@@ -452,21 +360,17 @@ class RimeCandidateListIterator {
 
 class RimeConfig {
     __New(ptr := 0) {
-        this.buff := Buffer(RimeConfig.size(), 0)
+        this.buff := Buffer(RimeConfig.buffer_size(), 0)
         if ptr {
-            Loop RimeConfig.size() {
+            Loop RimeConfig.buffer_size() {
                 byte := NumGet(ptr, A_Index - 1, "Char")
                 NumPut("Char", byte, this.buff, A_Index - 1)
             }
         }
     }
 
-    static size() {
-        return 4
-    }
-    static ptr_offset() {
-        return 0
-    }
+    static ptr_offset := (*) => 0
+    static buffer_size := (*) => RimeConfig.ptr_offset() + A_PtrSize
 
     ptr {
         get => NumGet(this.buff.Ptr, RimeConfig.ptr_offset(), "Ptr")
@@ -475,33 +379,21 @@ class RimeConfig {
 
 class RimeConfigIterator {
     __New(ptr := 0) {
-        this.buff := Buffer(RimeConfigIterator.size(), 0)
+        this.buff := Buffer(RimeConfigIterator.buffer_size(), 0)
         if ptr {
-            Loop RimeConfigIterator.size() {
+            Loop RimeConfigIterator.buffer_size() {
                 byte := NumGet(ptr, A_Index - 1, "Char")
                 NumPut("Char", byte, this.buff, A_Index - 1)
             }
         }
     }
 
-    static size() {
-        return 20
-    }
-    static list_offset() {
-        return 0
-    }
-    static map_offset() {
-        return RimeConfigIterator.list_offset() + A_PtrSize
-    }
-    static index_offset() {
-        return RimeConfigIterator.map_offset() + A_PtrSize
-    }
-    static key_offset() {
-        return RimeConfigIterator.index_offset() + INT_SIZE()
-    }
-    static path_offset() {
-        return RimeConfigIterator.key_offset() + A_PtrSize
-    }
+    static list_offset := (*) => 0
+    static map_offset := (*) => RimeConfigIterator.list_offset() + A_PtrSize
+    static index_offset := (*) => RimeConfigIterator.map_offset() + A_PtrSize
+    static key_offset := (*) => RimeConfigIterator.index_offset() + INT_SIZE()
+    static path_offset := (*) => RimeConfigIterator.key_offset() + A_PtrSize
+    static buffer_size := (*) => RimeConfigIterator.path_offset() + A_PtrSize
 
     list {
         get => NumGet(this.buff.Ptr, RimeConfigIterator.list_offset(), "Ptr")
@@ -522,24 +414,19 @@ class RimeConfigIterator {
 
 class RimeSchemaListItem {
     __New(ptr := 0) {
-        this.buff := Buffer(RimeSchemaListItem.size(), 0)
+        this.buff := Buffer(RimeSchemaListItem.buffer_size(), 0)
         if ptr {
-            Loop RimeSchemaListItem.size() {
+            Loop RimeSchemaListItem.buffer_size() {
                 byte := NumGet(ptr, A_Index - 1, "Char")
                 NumPut("Char", byte, this.buff, A_Index - 1)
             }
         }
     }
 
-    static size() {
-        return 12
-    }
-    static schema_id_offset() {
-        return 0
-    }
-    static name_offset() {
-        return RimeSchemaListItem.schema_id_offset() + A_PtrSize
-    }
+    static schema_id_offset := (*) => 0
+    static name_offset := (*) => RimeSchemaListItem.schema_id_offset() + A_PtrSize
+    static reserved_offset := (*) => RimeSchemaListItem.name_offset() + A_PtrSize
+    static buffer_size := (*) => RimeSchemaListItem.reserved_offset() + A_PtrSize
 
     schema_id {
         get => UTF8StrGet(this.buff.Ptr, RimeSchemaListItem.schema_id_offset())
@@ -551,28 +438,22 @@ class RimeSchemaListItem {
 
 class RimeSchemaList {
     __New() {
-        this.buff := Buffer(RimeSchemaList.size(), 0)
+        this.buff := Buffer(RimeSchemaList.buffer_size(), 0)
     }
 
-    static size() {
-        return 8
-    }
-    static size_offset() {
-        return 0
-    }
-    static list_offset() {
-        return RimeSchemaList.size_offset() + INT_SIZE()
-    }
+    static size_offset := (*) => 0
+    static list_offset := (*) => RimeSchemaList.size_offset() + A_PtrSize ; size_t size
+    static buffer_size := (*) => RimeSchemaList.list_offset() + A_PtrSize
 
     size {
-        get => NumGet(this.buff, RimeSchemaList.size_offset(), "Int")
+        get => NumGet(this.buff, RimeSchemaList.size_offset(), "UInt") ; returns size_t
     }
     list {
         get {
             sl := Array()
             if p := NumGet(this.buff.Ptr, RimeSchemaList.list_offset(), "Ptr") {
                 Loop this.size {
-                    ptr := p + (A_Index - 1) * RimeSchemaListItem.size()
+                    ptr := p + (A_Index - 1) * RimeSchemaListItem.buffer_size()
                     sl.Push(RimeSchemaListItem(ptr))
                 }
             }
@@ -581,37 +462,67 @@ class RimeSchemaList {
     }
 } ; RimeSchemaList
 
+/**
+ * Do not exist in 1.8.5 and before
+ */
 class RimeStringSlice {
-    __New(ptr := 0) {
-        this.buff := Buffer(RimeStringSlice.size(), 0)
-        if ptr {
-            Loop RimeStringSlice.size() {
-                byte := NumGet(ptr, A_Index - 1, "Char")
-                NumPut("Char", byte, this.buff, A_Index - 1)
-            }
-        }
+    __New(str := "", length := 0) {
+        this.buff := Buffer(RimeStringSlice.buffer_size(), 0)
+        this.str := str
+        this.length := length
     }
 
-    static size() {
-        return 8
-    }
-    static str_offset() {
-        return 0
-    }
-    static length_offset() {
-        return RimeStringSlice.str_offset() + A_PtrSize
-    }
+    static str_offset := (*) => 0
+    static length_offset := (*) => RimeStringSlice.str_offset() + A_PtrSize
+    static buffer_size := (*) => RimeStringSlice.length_offset() + A_PtrSize ; size_t length
 
     str {
         get => UTF8StrGet(this.buff.Ptr, RimeStringSlice.str_offset())
+        set => this.__str := UTF8StrPut(Value, this.buff.Ptr, RimeStringSlice.str_offset())
     }
     length {
-        get => NumGet(this.buff, RimeStringSlice.length_offset(), "UInt")
+        get => NumGet(this.buff, RimeStringSlice.length_offset(), "UInt") ; returns size_t
+        set => NumPut("UInt", Value, this.buff, RimeStringSlice.length_offset())
     }
 } ; RimeStringSlice
 
+; Just a template struct
+; Check out the actual example RimeLeversApi
 ; RimeCustomApi
-; RimeModule
+
+class RimeModule {
+    __New(rime := 0, module_name := "") {
+        this.buff := 0
+        this.module := 0
+        if rime and module_name
+            this.module := rime.find_module(module_name)
+        if not this.module {
+            this.buff := Buffer(RimeModule.buffer_size(), 0)
+            this.data_size := RimeModule.buffer_size() - INT_SIZE()
+        }
+    }
+
+    static data_size_offset := (*) => 0
+    static module_name_offset := (*) => RimeModule.data_size_offset() + INT_SIZE()
+    static initialize_offset := (*) => RimeModule.module_name_offset() + A_PtrSize
+    static finalize_offset := (*) => RimeModule.initialize_offset() + A_PtrSize
+    static get_api_offset := (*) => RimeModule.finalize_offset() + A_PtrSize
+    static buffer_size := (*) => RimeModule.get_api_offset() + A_PtrSize
+
+    ptr := (*) => this.buff ? this.buff.Ptr : this.module
+
+    data_size {
+        get => NumGet(this.ptr(), RimeModule.data_size_offset(), "Int")
+        set => NumPut("Int", Value, this.ptr(), RimeModule.data_size_offset())
+    }
+    module_name {
+        get => UTF8StrGet(this.ptr(), RimeModule.module_name_offset())
+        set => this.__module_name := UTF8StrPut(Value, this.ptr(), RimeModule.module_name_offset())
+    }
+    initialize := (*) => DllCall(NumGet(this.ptr(), RimeModule.initialize_offset(), "Ptr"), "Cdecl")
+    finalize := (*) => DllCall(NumGet(this.ptr(), RimeModule.finalize_offset(), "Ptr"), "Cdecl")
+    get_api := (*) => DllCall(NumGet(this.ptr(), RimeModule.get_api_offset(), "Ptr"), "Cdecl Ptr")
+} ; RimeModule
 
 class RimeApi {
     __New() {
@@ -646,7 +557,20 @@ class RimeApi {
         DllCall(NumGet(this.api, 4, "Ptr"), "Ptr", traits ? traits.buff.Ptr : 0, "Cdecl")
     }
 
-    ; () => void
+    /**
+     * Set the notification handler
+     * 
+     * @param handler a function that takes four parameters (type in ahk / type in c):
+     * 
+     * `Ptr` / `void *`
+     * 
+     * `UInt` / `RimeSessionId`
+     * 
+     * `Ptr` / `const char *`
+     * 
+     * `Ptr` / `const char *`
+     * @param context_object `Ptr` in ahk, `void *` in librime
+     */
     set_notification_handler(handler, context_object) {
         DllCall(NumGet(this.api, 8, "Ptr"), "Ptr", CallbackCreate(handler, "C", 4), "Ptr", context_object, "Cdecl")
     }
@@ -799,7 +723,7 @@ class RimeApi {
     }
 
     ; (UInt, Str, UInt) => Str
-    get_property(session_id, prop, buffer_size) {
+    get_property(session_id, prop, buffer_size := DEFAULT_BUFFER_SIZE()) {
         buf := Buffer(buffer_size)
         res := DllCall(NumGet(this.api, 124, "Ptr"), "UInt", session_id, "Ptr", UTF8Buffer(prop).Ptr, "Ptr", buf.Ptr, "UInt", buffer_size, "Cdecl Int")
         return res ? StrGet(buf.Ptr, "UTF-8") : ""
@@ -818,7 +742,7 @@ class RimeApi {
     }
 
     ; (UInt, UInt) => Str
-    get_current_schema(session_id, buffer_size) {
+    get_current_schema(session_id, buffer_size := DEFAULT_BUFFER_SIZE()) {
         buf := Buffer(buffer_size)
         res := DllCall(NumGet(this.api, 136, "Ptr"), "UInt", session_id, "Ptr", buf.Ptr, "UInt", buffer_size, "Cdecl Int")
         return res ? StrGet(buf.Ptr, "UTF-8") : ""
@@ -829,27 +753,253 @@ class RimeApi {
         return DllCall(NumGet(this.api, 140, "Ptr"), "UInt", session_id, "Ptr", UTF8Buffer(schema_id).Ptr, "Cdecl Int")
     }
 
-    ; schema_open, offset 144
-    ; config_open, offset 148
-    ; config_close, offset 152
-    ; config_get_bool, offset 156
-    ; config_get_int, offset 160
-    ; config_get_double, offset 164
-    ; config_get_string, offset 168
+    /**
+     * Open a schema
+     * 
+     * @param schema_id type of `Str`
+     * @returns type of `RimeConfig` on success, `0` on failure
+     */
+    schema_open(schema_id) {
+        config := RimeConfig()
+        res := DllCall(NumGet(this.api, 144, "Ptr"), "Ptr", UTF8Buffer(schema_id).Ptr, "Ptr", config.buff.Ptr, "Cdecl Int")
+        return res ? config : 0
+    }
+
+    /**
+     * Open a config
+     * 
+     * @param config_id type of `Str`
+     * @returns type of `RimeConfig` on success, `0` on failure
+     */
+    config_open(config_id) {
+        config := RimeConfig()
+        res := DllCall(NumGet(this.api, 148, "Ptr"), "Ptr", UTF8Buffer(config_id).Ptr, "Ptr", config.buff.Ptr, "Cdecl Int")
+        return res ? config : 0
+    }
+
+    ; (RimeConfig) => void
+    /**
+     * Close a config
+     * 
+     * @param config type of `RimeConfig`
+     * @returns `True` on success, `False` on failure
+     */
+    config_close(config) {
+        return DllCall(NumGet(this.api, 152, "Ptr"), "Ptr", config ? config.buff.Ptr : 0, "Cdecl Int")
+    }
+
+    /**
+     * Test the existence of a boolean value in the config
+     * 
+     * @param config type of `RimeConfig`
+     * @param key type of `Str`
+     * @returns `True` if exist, `False` if not
+     */
+    config_exist_bool(config, key) {
+        buf := Buffer(INT_SIZE())
+        return DllCall(NumGet(this.api, 156, "Ptr"), "Ptr", config ? config.buff.Ptr : 0, "Ptr", UTF8Buffer(key).Ptr, "Ptr", buf.Ptr, "Cdecl Int")
+    }
+
+    /**
+     * Get a boolean value from the config
+     * 
+     * Suggest to use `config_exist_bool` before this function, or use `config_test_get_bool` instead
+     * 
+     * @param config type of `RimeConfig`
+     * @param key type of `Str`
+     * @returns the boolean value in the config if exists, or `False` if not exists 
+     */
+    config_get_bool(config, key) {
+        buf := Buffer(INT_SIZE())
+        res := DllCall(NumGet(this.api, 156, "Ptr"), "Ptr", config ? config.buff.Ptr : 0, "Ptr", UTF8Buffer(key).Ptr, "Ptr", buf.Ptr, "Cdecl Int")
+        return res ? NumGet(buf, "Int") : 0
+    }
+
+    /**
+     * Test and get a boolean value from the config
+     * 
+     * @param config type of `RimeConfig`
+     * @param key type of `Str`
+     * @param value pass by reference, type of `Int`
+     * @returns `True` on success, `False` on failure
+     */
+    config_test_get_bool(config, key, &value) {
+        buf := Buffer(INT_SIZE())
+        if res := DllCall(NumGet(this.api, 156, "Ptr"), "Ptr", config ? config.buff.Ptr : 0, "Ptr", UTF8Buffer(key).Ptr, "Ptr", buf.Ptr, "Cdecl Int")
+            value := NumGet(buf, "Int")
+        return res
+    }
+
+    /**
+     * Test the existence of an integer in the config
+     * 
+     * @param config type of `RimeConfig`
+     * @param key type of `Str`
+     * @returns `True` if exist, `False` if not
+     */
+    config_exist_int(config, key) {
+        buf := Buffer(INT_SIZE())
+        return DllCall(NumGet(this.api, 160, "Ptr"), "Ptr", config ? config.buff.Ptr : 0, "Ptr", UTF8Buffer(key).Ptr, "Ptr", buf.Ptr, "Cdecl Int")
+    }
+
+    /**
+     * Get integer from the config
+     * 
+     * Suggest to use `config_exist_int` before this function, or use `config_test_get_int` instead
+     * 
+     * @param config type of `RimeConfig`
+     * @param key type of `Str`
+     * @returns the integer in the config if exists, or `0` if not exists
+     */
+    config_get_int(config, key) {
+        buf := Buffer(INT_SIZE())
+        res := DllCall(NumGet(this.api, 160, "Ptr"), "Ptr", config ? config.buff.Ptr : 0, "Ptr", UTF8Buffer(key).Ptr, "Ptr", buf.Ptr, "Cdecl Int")
+        return res ? NumGet(buf, "Int") : 0
+    }
+
+    /**
+     * Test and get an integer from the config
+     * 
+     * @param config type of `RimeConfig`
+     * @param key type of `Str`
+     * @param value pass by reference, type of `Double`
+     * @returns `True` on success, `False` on failure
+     */
+    config_test_get_int(config, key, &value) {
+        buf := Buffer(INT_SIZE())
+        if res := DllCall(NumGet(this.api, 160, "Ptr"), "Ptr", config ? config.buff.Ptr : 0, "Ptr", UTF8Buffer(key).Ptr, "Ptr", buf.Ptr, "Cdecl Int")
+            value := NumGet(buf, "Int")
+        return res
+    }
+
+    /**
+     * Test the existence of a double in the config
+     * 
+     * @param config type of `RimeConfig`
+     * @param key type of `Str`
+     * @returns `True` if exist, `False` if not
+     */
+    config_exist_double(config, key) {
+        buf := Buffer(INT_SIZE() * 2)
+        return DllCall(NumGet(this.api, 164, "Ptr"), "Ptr", config ? config.buff.Ptr : 0, "Ptr", UTF8Buffer(key).Ptr, "Ptr", buf.Ptr, "Cdecl Int")
+    }
+
+    ; (RimeConfig, Str) => Double
+    /**
+     * Get a double from the config
+     * 
+     * Suggest to use `config_exist_double` before this function, or use `config_test_get_double` instead
+     * 
+     * @param config type of `RimeConfig`
+     * @param key type of `Str`
+     * @returns the double value in the config if exists, or `False` if not exists
+     */
+    config_get_double(config, key) {
+        buf := Buffer(INT_SIZE() * 2)
+        res := DllCall(NumGet(this.api, 164, "Ptr"), "Ptr", config ? config.buff.Ptr : 0, "Ptr", UTF8Buffer(key).Ptr, "Ptr", buf.Ptr, "Cdecl Int")
+        return res ? NumGet(buf, "Double") : 0
+    }
+
+    /**
+     * Test and get a double from the config
+     * 
+     * @param config type of `RimeConfig`
+     * @param key type of `Str`
+     * @param value pass by reference, type of `Double`
+     * @returns `True` on success, `False` on failure
+     */
+    config_test_get_double(config, key, &value) {
+        buf := Buffer(INT_SIZE() * 2)
+        if res := DllCall(NumGet(this.api, 164, "Ptr"), "Ptr", config ? config.buff.Ptr : 0, "Ptr", UTF8Buffer(key).Ptr, "Ptr", buf.Ptr, "Cdecl Int")
+            value := NumGet(buf, "Double")
+        return res
+    }
+
+    /**
+     * Get a string from the config
+     * 
+     * @param config type of `RimeConfig`
+     * @param key type of `Str`
+     * @param buffer_size default 512
+     * @returns the string in the config, or empty string if failed
+     */
+    config_get_string(config, key, buffer_size := DEFAULT_BUFFER_SIZE()) {
+        buf := Buffer(buffer_size)
+        res := DllCall(NumGet(this.api, 168, "Ptr"), "Ptr", config ? config.buff.Ptr : 0, "Ptr", UTF8Buffer(key).Ptr, "Ptr", buf.Ptr, "UInt", buffer_size, "Cdecl Int")
+        return res ? StrGet(buf.Ptr, "UTF-8") : ""
+    }
+
+    ; TODO: it seems this function fetches the raw string of yaml, need furthre confirming
     ; config_get_cstring, offset 172
-    ; config_update_signature, offset 176
-    ; config_begin_map, offset 180
+
+    /**
+     * 
+     * @param config type of `RimeConfig`
+     * @param signer type of `Str`
+     * @returns `True` on success, `False` on failure
+     */
+    config_update_signature(config, signer) {
+        return DllCall(NumGet(this.api, 172, "Ptr"), "Ptr", config ? config.buff.Ptr : 0, "Ptr", UTF8Buffer(signer).Ptr, "Cdecl Int")
+    }
+
+    /**
+     * Get the begin iterator of a map from the config
+     * 
+     * @param config type of `RimeConfig`
+     * @param key type of `Str`
+     * @returns iterator of `RimeConfigIterator` on success, `0` on failure
+     */
+    config_begin_map(config, key) {
+        iterator := RimeConfigIterator()
+        res := DllCall(NumGet(this.api, 180, "Ptr"), "Ptr", iterator.buff.Ptr, "Ptr", config ? config.buff.Ptr : 0, "Ptr", UTF8Buffer(key).Ptr, "Cdecl Int")
+        return res ? iterator : 0
+    }
+
     ; config_next, offset 184
-    ; config_end, offset 188
+    /**
+     * Increment the config iterator
+     * 
+     * @param iterator type of `RimeConfigIterator`
+     * @returns `True` if not end, `False` if end
+     */
+    config_next(iterator) {
+        return DllCall(NumGet(this.api, 184, "Ptr"), "Ptr", iterator ? iterator.buff.Ptr : 0, "Cdecl Int")
+    }
+
+    /**
+     * Cleanup the config iterator
+     * 
+     * @param iterator type of `RimeConfigIterator`
+     */
+    config_end(iterator) {
+        DllCall(NumGet(this.api, 188, "Ptr"), "Ptr", iterator ? iterator.buff.Ptr : 0, "Cdecl")
+    }
 
     ; (UInt, Str) => Int
     simulate_key_sequence(session_id, key_sequence) {
         return DllCall(NumGet(this.api, 192, "Ptr"), "UInt", session_id, "Ptr", UTF8Buffer(key_sequence).Ptr, "Cdecl Int")
     }
 
-    ; register_module, offset 196
-    ; find_module, offset 200
-    ; run_task, offset 204
+    /**
+     * 
+     * @param module type of `RimeModule`
+     * @returns `True` on success, `False` on failure
+     */
+    register_module(module) {
+        return DllCall(NumGet(this.api, 196, "Ptr"), "Ptr", module ? module.buff.Ptr : 0, "Cdecl Int")
+    }
+
+    find_module := module_name => DllCall(NumGet(this.api, 200, "Ptr"), "Ptr", UTF8Buffer(module_name).Ptr, "Cdecl Ptr")
+
+    /**
+     * Run task
+     * 
+     * @param task_name type of `Str`
+     * @returns `True` on success, `False` on failure
+     */
+    run_task(task_name) {
+        return DllCall(NumGet(this.api, 204, "Ptr"), "Ptr", UTF8Buffer(task_name).Ptr, "Cdecl Int")
+    }
 
     ; () => Str
     get_shared_data_dir() {
@@ -880,25 +1030,166 @@ class RimeApi {
     }
 
     ; (UInt) => Str
-    get_user_data_sync_dir(buffer_size) {
+    get_user_data_sync_dir(buffer_size := DEFAULT_BUFFER_SIZE()) {
         buf := Buffer(buffer_size, 0)
         DllCall(NumGet(this.api, 224, "Ptr"), "Ptr", buf.Ptr, "UInt", buffer_size, "Cdecl")
         return StrGet(buf.Ptr, "UTF-8")
     }
 
-    ; config_init, offset 228
-    ; config_load_string, offset 232
-    ; config_set_bool, offset 236
-    ; config_set_int, offset 240
-    ; config_set_double, offset 244
-    ; config_set_string, offset 248
-    ; config_get_item, offset 252
-    ; config_set_item, offset 256
-    ; config_clear, offset 260
-    ; config_create_list, offset 264
-    ; config_create_map, offset 268
-    ; config_list_size, offset 272
-    ; config_begin_list, offset 276
+    /**
+     * Initialize an empty config object
+     * 
+     * should call `config_close` to free the object
+     * 
+     * @returns `RimeConfig` on success, `0` on failure
+     */
+    config_init() {
+        config := RimeConfig()
+        res := DllCall(NumGet(this.api, 228, "Ptr"), "Ptr", config.buff.Ptr, "Cdecl Int")
+        return res ? config : 0
+    }
+
+    /**
+     * Create config from a yaml string
+     * 
+     * @param yaml type of `Str`
+     * @returns `RimeConfig` on success, `0` on failure
+     */
+    config_load_string(yaml) {
+        config := RimeConfig()
+        res := DllCall(NumGet(this.api, 232, "Ptr"), "Ptr", config.buff.Ptr, "Ptr", UTF8Buffer(yaml).Ptr, "Cdecl Int")
+        return res ? config : 0
+    }
+
+    /**
+     * Set boolean value to config
+     * 
+     * @param config type of `RimeConfig`
+     * @param key type of `Str`
+     * @param value `True` or `False`
+     * @returns `True` on success, `False` on failure
+     */
+    config_set_bool(config, key, value) {
+        return DllCall(NumGet(this.api, 236, "Ptr"), "Ptr", config ? config.buff.Ptr : 0, "Ptr", UTF8Buffer(key).Ptr, "Int", value, "Cdecl Int")
+    }
+
+    /**
+     * Set integer to config
+     * 
+     * @param config type of `RimeConfig`
+     * @param key type of `Str`
+     * @param value type of `Int`
+     * @returns `True` on success, `False` on failure
+     */
+    config_set_int(config, key, value) {
+        return DllCall(NumGet(this.api, 240, "Ptr"), "Ptr", config ? config.buff.Ptr : 0, "Ptr", UTF8Buffer(key).Ptr, "Int", value, "Cdecl Int")
+    }
+
+    /**
+     * Set double to config
+     * 
+     * @param config type of `RimeConfig`
+     * @param key type of `Str`
+     * @param value type of `Double`
+     * @returns `True` on success, `False` on failure
+     */
+    config_set_double(config, key, value) {
+        return DllCall(NumGet(this.api, 244, "Ptr"), "Ptr", config ? config.buff.Ptr : 0, "Ptr", UTF8Buffer(key).Ptr, "Double", value, "Cdecl Int")
+    }
+
+    /**
+     * Set string to config
+     * 
+     * @param config type of `RimeConfig`
+     * @param key type of `Str`
+     * @param value type of `Double`
+     * @returns `True` on success, `False` on failure
+     */
+    config_set_string(config, key, value) {
+        return DllCall(NumGet(this.api, 248, "Ptr"), "Ptr", config ? config.buff.Ptr : 0, "Ptr", UTF8Buffer(key).Ptr, "Ptr", UTF8Buffer(value).Ptr, "Cdecl Int")
+    }
+
+    /**
+     * Get item from the config
+     * 
+     * @param config type of `RimeConfig
+     * @param key type of `Str`
+     * @returns `RimeConfig` onsuccess, `0` on failure
+     */
+    config_get_item(config, key) {
+        value := RimeConfig()
+        res := DllCall(NumGet(this.api, 252, "Ptr"), "Ptr", config ? config.buff.Ptr : 0, "Ptr", UTF8Buffer(key).Ptr, "Ptr", value.buff.Ptr, "Cdecl Int")
+        return res ? value : 0
+    }
+
+    /**
+     * Set item into the config
+     * 
+     * @param config type of `RimeConfig`
+     * @param key type of `Str`
+     * @param value type of `RimeConfig`
+     * @returns `True` on success, `False` on failure
+     */
+    config_set_item(config, key, value) {
+        return DllCall(NumGet(this.api, 256, "Ptr"), "Ptr", config ? config.buff.Ptr : 0, "Ptr", UTF8Buffer(key).Ptr, "Ptr", value ? value.buff.Ptr : 0, "Cdecl Int")
+    }
+
+    /**
+     * Clear item of the config
+     * 
+     * @param config type of `RimeConfig`
+     * @param key type of `Str`
+     * @returns `True` on success, `False` on failure
+     */
+    config_clear(config, key) {
+        return DllCall(NumGet(this.api, 260, "Ptr"), "Ptr", config ? config.buff.Ptr : 0, "Ptr", UTF8Buffer(key).Ptr, "Cdecl Int")
+    }
+
+    /**
+     * Create a list in the config
+     * 
+     * @param config type of `RimeConfig`
+     * @param key type of `Str`
+     * @returns `True` on success, `False` on failure
+     */
+    config_create_list(config, key) {
+        return DllCall(NumGet(this.api, 264, "Ptr"), "Ptr", config ? config.buff.Ptr : 0, "Ptr", UTF8Buffer(key).Ptr, "Cdecl Int")
+    }
+
+    /**
+     * Create a map in the config
+     * 
+     * @param config type of `RimeConfig`
+     * @param key type of `Str`
+     * @returns `True` on success, `False` on failure
+     */
+    config_create_map(config, key) {
+        return DllCall(NumGet(this.api, 268, "Ptr"), "Ptr", config ? config.buff.Ptr : 0, "Ptr", UTF8Buffer(key).Ptr, "Cdecl Int")
+    }
+
+    /**
+     * Get size of list in the config
+     * 
+     * @param config type of `RimeConfig`
+     * @param key type of `Str`
+     * @returns the size of desired list
+     */
+    config_list_size(config, key) {
+        return DllCall(NumGet(this.api, 272, "Ptr"), "Ptr", config ? config.buff.Ptr : 0, "Ptr", UTF8Buffer(key).Ptr, "Cdecl UInt") ; returns size_t
+    }
+
+    /**
+     * Get the begin iterator of a list from the config
+     * 
+     * @param config type of `RimeConfig`
+     * @param key type of `Str`
+     * @returns iterator of `RimeConfigIterator` on success, `0` on failure
+     */
+    config_begin_list(config, key) {
+        iterator := RimeConfigIterator()
+        res := DllCall(NumGet(this.api, 276, "Ptr"), "Ptr", iterator.buff.Ptr, "Ptr", config ? config.buff.Ptr : 0, "Ptr", UTF8Buffer(key).Ptr, "Cdecl Int")
+        return res ? iterator : 0
+    }
 
     ; (UInt) => Str
     get_input(session_id) {
@@ -951,7 +1242,17 @@ class RimeApi {
         DllCall(NumGet(this.api, 312, "Ptr"), "Ptr", iterator ? iterator.buff.Ptr : 0, "Cdecl")
     }
 
-    ; user_config_open, offset 316
+    /**
+     * Open user config
+     * 
+     * @param config_id type of `Str`
+     * @returns `RimConfig` on success, `0` on failure`
+     */
+    user_config_open(config_id) {
+        config := RimeConfig()
+        res := DllCall(NumGet(this.api, 316, "Ptr"), "Ptr", UTF8Buffer(config_id).Ptr, "Ptr", config.buff.Ptr, "Cdecl Int")
+        return res ? config : 0
+    }
 
     ; (UInt, RimeCandidateListIterator, UInt) => Int
     candidate_list_from_index(session_id, iterator, index) {
@@ -972,6 +1273,7 @@ class RimeApi {
         return ""
     }
 
+    ; Deprecated - nullptr
     ; commit_proto, offset 332
     ; context_proto, offset 336
     ; status_proto, offset 340
@@ -993,5 +1295,25 @@ class RimeApi {
         return DllCall(NumGet(this.api, 352, "Ptr"), "UInt", session_id, "UInt", index, "Cdecl Int")
     }
 
-    ; get_state_label_abbreviated, offset 356
+    /**
+     * This API returns a struct `rime_string_slice_t` instead of a pointer to it. Due to the limitation of `DllCall`, there is currently no way to retrieve a struct with size larger than 64 bits. It will only work with 32-bit librime and AutoHotkey.
+     * 
+     * This API is not available in librime 1.8.5 and below.
+     * 
+     * @param session_id type of `UInt`
+     * @param option_name type of `Str`
+     * @param state `True` or `False`
+     * @param abbreviated `True` or `False`
+     * @returns `RimeStringSlice` on success, `0` on failure
+     */
+    get_state_label_abbreviated(session_id, option_name, state, abbreviated) {
+        if this.data_size < 356 or A_PtrSize > 4
+            return 0
+        res := DllCall(NumGet(this.api, 356, "Ptr"), "UInt", session_id, "Ptr", UTF8Buffer(option_name).Ptr, "Int", state, "Int", abbreviated, "Cdecl Int64")
+        try
+            str := StrGet(res & 0xffffffff, "UTF-8")
+        catch as e
+            return 0
+        return RimeStringSlice(str, res >> 32)
+    }
 }
