@@ -434,6 +434,9 @@ class RimeSchemaListItem {
     name {
         get => UTF8StrGet(this.buff.Ptr, RimeSchemaListItem.name_offset())
     }
+    reserved {
+        get => NumGet(this.buff, RimeSchemaListItem.reserved_offset(), "Ptr")
+    }
 } ; RimeSchemaListItem
 
 class RimeSchemaList {
@@ -499,6 +502,7 @@ class RimeModule {
         if not this.module {
             this.buff := Buffer(RimeModule.buffer_size(), 0)
             this.data_size := RimeModule.buffer_size() - INT_SIZE()
+            this.module_name := module_name
         }
     }
 
@@ -526,35 +530,120 @@ class RimeModule {
 
 class RimeApi {
     __New() {
-        if not RimeApi.rimeDll {
-            MsgBox("未找到 rime.dll！", "错误")
-            ExitApp(1)
-        }
-
+        if not RimeApi.rimeDll
+            throw Error("未找到 rime.dll！")
         this.api := DllCall("rime\rime_get_api", "Cdecl Ptr")
-        if not this.api {
-            MsgBox("获取 Rime API 失败！", "错误")
-            ExitApp(1)
-        }
-
-        if VerCompare(this.get_version(), RimeApi.min_version()) < 0 {
-            MsgBox("Librime 版本过低，请使用 1.8.5 及以上版本。", "错误")
-            ExitApp(1)
-        }
+        if not this.api
+            throw Error("获取 Rime API 失败！")
+        if VerCompare(this.get_version(), RimeApi.min_version()) < 0
+            throw Error("Librime 版本过低，请使用 1.8.5 及以上版本。")
     }
 
     static rimeDll := DllCall("LoadLibrary", "Str", "rime.dll", "Ptr")
-    static min_version() {
-        return "1.8.5"
+    static min_version := (*) => "1.8.5"
+    static data_size_offset := (*) => 0
+    static setup_offset := (*) => RimeApi.data_size_offset() + INT_SIZE()
+    static set_notification_handler_offset := (*) => RimeApi.setup_offset() + A_PtrSize
+    static initialize_offset := (*) => RimeApi.set_notification_handler_offset() + A_PtrSize
+    static finalize_offset := (*) => RimeApi.initialize_offset() + A_PtrSize
+    static start_maintenance_offset := (*) => RimeApi.finalize_offset() + A_PtrSize
+    static is_maintenance_mode_offset := (*) => RimeApi.start_maintenance_offset() + A_PtrSize
+    static join_maintenance_thread_offset := (*) => RimeApi.is_maintenance_mode_offset() + A_PtrSize
+    static deployer_initialize_offset := (*) => RimeApi.join_maintenance_thread_offset() + A_PtrSize
+    static prebuild_offset := (*) => RimeApi.deployer_initialize_offset() + A_PtrSize
+    static deploy_offset := (*) => RimeApi.prebuild_offset() + A_PtrSize
+    static deploy_schema_offset := (*) => RimeApi.deploy_offset() + A_PtrSize
+    static deploy_config_file_offset := (*) => RimeApi.deploy_schema_offset() + A_PtrSize
+    static sync_user_data_offset := (*) => RimeApi.deploy_config_file_offset() + A_PtrSize
+    static create_session_offset := (*) => RimeApi.sync_user_data_offset() + A_PtrSize
+    static find_session_offset := (*) => RimeApi.create_session_offset() + A_PtrSize
+    static destroy_session_offset := (*) => RimeApi.find_session_offset() + A_PtrSize
+    static cleanup_stale_sessions_offset := (*) => RimeApi.destroy_session_offset() + A_PtrSize
+    static cleanup_all_sessions_offset := (*) => RimeApi.cleanup_stale_sessions_offset() + A_PtrSize
+    static process_key_offset := (*) => RimeApi.cleanup_all_sessions_offset() + A_PtrSize
+    static commit_composition_offset := (*) => RimeApi.process_key_offset() + A_PtrSize
+    static clear_composition_offset := (*) => RimeApi.commit_composition_offset() + A_PtrSize
+    static get_commit_offset := (*) => RimeApi.clear_composition_offset() + A_PtrSize
+    static free_commit_offset := (*) => RimeApi.get_commit_offset() + A_PtrSize
+    static get_context_offset := (*) => RimeApi.free_commit_offset() + A_PtrSize
+    static free_context_offset := (*) => RimeApi.get_context_offset() + A_PtrSize
+    static get_status_offset := (*) => RimeApi.free_context_offset() + A_PtrSize
+    static free_status_offset := (*) => RimeApi.get_status_offset() + A_PtrSize
+    static set_option_offset := (*) => RimeApi.free_status_offset() + A_PtrSize
+    static get_option_offset := (*) => RimeApi.set_option_offset() + A_PtrSize
+    static set_property_offset := (*) => RimeApi.get_option_offset() + A_PtrSize
+    static get_property_offset := (*) => RimeApi.set_property_offset() + A_PtrSize
+    static get_schema_list_offset := (*) => RimeApi.get_property_offset() + A_PtrSize
+    static free_schema_list_offset := (*) => RimeApi.get_schema_list_offset() + A_PtrSize
+    static get_current_schema_offset := (*) => RimeApi.free_schema_list_offset() + A_PtrSize
+    static select_schema_offset := (*) => RimeApi.get_current_schema_offset() + A_PtrSize
+    static schema_open_offset := (*) => RimeApi.select_schema_offset() + A_PtrSize
+    static config_open_offset := (*) => RimeApi.schema_open_offset() + A_PtrSize
+    static config_close_offset := (*) => RimeApi.config_open_offset() + A_PtrSize
+    static config_get_bool_offset := (*) => RimeApi.config_close_offset() + A_PtrSize
+    static config_get_int_offset := (*) => RimeApi.config_get_bool_offset() + A_PtrSize
+    static config_get_double_offset := (*) => RimeApi.config_get_int_offset() + A_PtrSize
+    static config_get_string_offset := (*) => RimeApi.config_get_double_offset() + A_PtrSize
+    static config_get_cstring_offset := (*) => RimeApi.config_get_string_offset() + A_PtrSize
+    static config_update_signature_offset := (*) => RimeApi.config_get_cstring_offset() + A_PtrSize
+    static config_begin_map_offset := (*) => RimeApi.config_update_signature_offset() + A_PtrSize
+    static config_next_offset := (*) => RimeApi.config_begin_map_offset() + A_PtrSize
+    static config_end_offset := (*) => RimeApi.config_next_offset() + A_PtrSize
+    static simulate_key_sequence_offset := (*) => RimeApi.config_end_offset() + A_PtrSize
+    static register_module_offset := (*) => RimeApi.simulate_key_sequence_offset() + A_PtrSize
+    static find_module_offset := (*) => RimeApi.register_module_offset() + A_PtrSize
+    static run_task_offset := (*) => RimeApi.find_module_offset() + A_PtrSize
+    static get_shared_data_dir_offset := (*) => RimeApi.run_task_offset() + A_PtrSize
+    static get_user_data_dir_offset := (*) => RimeApi.get_shared_data_dir_offset() + A_PtrSize
+    static get_sync_dir_offset := (*) => RimeApi.get_user_data_dir_offset() + A_PtrSize
+    static get_user_id_offset := (*) => RimeApi.get_sync_dir_offset() + A_PtrSize
+    static get_user_data_sync_dir_offset := (*) => RimeApi.get_user_id_offset() + A_PtrSize
+    static config_init_offset := (*) => RimeApi.get_user_data_sync_dir_offset() + A_PtrSize
+    static config_load_string_offset := (*) => RimeApi.config_init_offset() + A_PtrSize
+    static config_set_bool_offset := (*) => RimeApi.config_load_string_offset() + A_PtrSize
+    static config_set_int_offset := (*) => RimeApi.config_set_bool_offset() + A_PtrSize
+    static config_set_double_offset := (*) => RimeApi.config_set_int_offset() + A_PtrSize
+    static config_set_string_offset := (*) => RimeApi.config_set_double_offset() + A_PtrSize
+    static config_get_item_offset := (*) => RimeApi.config_set_string_offset() + A_PtrSize
+    static config_set_item_offset := (*) => RimeApi.config_get_item_offset() + A_PtrSize
+    static config_clear_offset := (*) => RimeApi.config_set_item_offset() + A_PtrSize
+    static config_create_list_offset := (*) => RimeApi.config_clear_offset() + A_PtrSize
+    static config_create_map_offset := (*) => RimeApi.config_create_list_offset() + A_PtrSize
+    static config_list_size_offset := (*) => RimeApi.config_create_map_offset() + A_PtrSize
+    static config_begin_list_offset := (*) => RimeApi.config_list_size_offset() + A_PtrSize
+    static get_input_offset := (*) => RimeApi.config_begin_list_offset() + A_PtrSize
+    static get_caret_pos_offset := (*) => RimeApi.get_input_offset() + A_PtrSize
+    static select_candidate_offset := (*) => RimeApi.get_caret_pos_offset() + A_PtrSize
+    static get_version_offset := (*) => RimeApi.select_candidate_offset() + A_PtrSize
+    static set_caret_pos_offset := (*) => RimeApi.get_version_offset() + A_PtrSize
+    static select_candidate_on_current_page_offset := (*) => RimeApi.set_caret_pos_offset() + A_PtrSize
+    static candidate_list_begin_offset := (*) => RimeApi.select_candidate_on_current_page_offset() + A_PtrSize
+    static candidate_list_next_offset := (*) => RimeApi.candidate_list_begin_offset() + A_PtrSize
+    static candidate_list_end_offset := (*) => RimeApi.candidate_list_next_offset() + A_PtrSize
+    static user_config_open_offset := (*) => RimeApi.candidate_list_end_offset() + A_PtrSize
+    static candidate_list_from_index_offset := (*) => RimeApi.user_config_open_offset() + A_PtrSize
+    static get_prebuilt_data_dir_offset := (*) => RimeApi.candidate_list_from_index_offset() + A_PtrSize
+    static get_staging_dir_offset := (*) => RimeApi.get_prebuilt_data_dir_offset() + A_PtrSize
+    static commit_proto_offset := (*) => RimeApi.get_staging_dir_offset() + A_PtrSize
+    static context_proto_offset := (*) => RimeApi.commit_proto_offset() + A_PtrSize
+    static status_proto_offset := (*) => RimeApi.context_proto_offset() + A_PtrSize
+    static get_state_label_offset := (*) => RimeApi.status_proto_offset() + A_PtrSize
+    static delete_candidate_offset := (*) => RimeApi.get_state_label_offset() + A_PtrSize
+    static delete_candidate_on_current_page_offset := (*) => RimeApi.delete_candidate_offset() + A_PtrSize
+    static get_state_label_abbreviated_offset := (*) => RimeApi.delete_candidate_on_current_page_offset() + A_PtrSize
+    static buffer_size := (*) => RimeApi.get_state_label_abbreviated_offset() + A_PtrSize
+
+    fp(offset) {
+        return NumGet(this.api, offset, "Ptr")
     }
 
     data_size {
-        get => NumGet(this.api, 0, "Int")
+        get => NumGet(this.api, RimeApi.data_size_offset(), "Int")
     }
 
     ; (RimeTraits) => void
     setup(traits) {
-        DllCall(NumGet(this.api, 4, "Ptr"), "Ptr", traits ? traits.buff.Ptr : 0, "Cdecl")
+        DllCall(this.fp(RimeApi.setup_offset()), "Ptr", traits ? traits.buff.Ptr : 0, "Cdecl")
     }
 
     /**
@@ -572,185 +661,185 @@ class RimeApi {
      * @param context_object `Ptr` in ahk, `void *` in librime
      */
     set_notification_handler(handler, context_object) {
-        DllCall(NumGet(this.api, 8, "Ptr"), "Ptr", CallbackCreate(handler, "C", 4), "Ptr", context_object, "Cdecl")
+        DllCall(this.fp(RimeApi.set_notification_handler_offset()), "Ptr", CallbackCreate(handler, "C", 4), "Ptr", context_object, "Cdecl")
     }
 
     ; (RimeTraits) => void
     initialize(traits) {
-        DllCall(NumGet(this.api, 12, "Ptr"), "Ptr", traits ? traits.buff.Ptr : 0, "Cdecl")
+        DllCall(this.fp(RimeApi.initialize_offset()), "Ptr", traits ? traits.buff.Ptr : 0, "Cdecl")
     }
 
     ; () => void
     finalize() {
-        DllCall(NumGet(this.api, 16, "Ptr"), "Cdecl")
+        DllCall(this.fp(RimeApi.finalize_offset()), "Cdecl")
         DllCall("FreeLibrary", "Ptr", RimeApi.rimeDll)
     }
 
     ; (Int) => Int
     start_maintenace(full_check) {
-        return DllCall(NumGet(this.api, 20, "Ptr"), "Int", full_check, "Cdecl Int")
+        return DllCall(this.fp(RimeApi.start_maintenance_offset()), "Int", full_check, "Cdecl Int")
     }
 
     ; () => Int
     is_maintenance_mode() {
-        return DllCall(NumGet(this.api, 24, "Ptr"), "Cdecl Int")
+        return DllCall(this.fp(RimeApi.is_maintenance_mode_offset()), "Cdecl Int")
     }
 
     ; () => void
     join_maintenance_thread() {
-        DllCall(NumGet(this.api, 28, "Ptr"), "Cdecl")
+        DllCall(this.fp(RimeApi.join_maintenance_thread_offset()), "Cdecl")
     }
 
     ; (RimeTraits) => void
     deployer_initialize(traits) {
-        DllCall(NumGet(this.api, 32, "Ptr"), "Ptr", traits ? traits.buff.Ptr : 0, "Cdecl")
+        DllCall(this.fp(RimeApi.deployer_initialize_offset()), "Ptr", traits ? traits.buff.Ptr : 0, "Cdecl")
     }
 
     ; () => Int
     prebuild() {
-        return DllCall(NumGet(this.api, 36, "Ptr"), "Cdecl Int")
+        return DllCall(this.fp(RimeApi.prebuild_offset()), "Cdecl Int")
     }
 
     ; () => Int
     deploy() {
-        return DllCall(NumGet(this.api, 40, "Ptr"), "Cdecl Int")
+        return DllCall(this.fp(RimeApi.deploy_offset()), "Cdecl Int")
     }
 
     ; (Str) => Int
     deploy_schemas(schema_file) {
-        return DllCall(NumGet(this.api, 44, "Ptr"), "Ptr", UTF8Buffer(schema_file).Ptr, "Cdecl Int")
+        return DllCall(this.fp(RimeApi.deploy_schema_offset()), "Ptr", UTF8Buffer(schema_file).Ptr, "Cdecl Int")
     }
 
     ; (Str, Str) => Int
     deploy_config_file(file_name, version_key) {
-        return DllCall(NumGet(this.api, 48, "Ptr"), "Ptr", UTF8Buffer(file_name).Ptr, "Ptr", UTF8Buffer(version_key).Ptr, "Cdecl Int")
+        return DllCall(this.fp(RimeApi.deploy_config_file_offset()), "Ptr", UTF8Buffer(file_name).Ptr, "Ptr", UTF8Buffer(version_key).Ptr, "Cdecl Int")
     }
 
     ; () => Int
     sync_user_data() {
-        return DllCall(NumGet(this.api, 52, "Ptr"), "Cdecl Int")
+        return DllCall(this.fp(RimeApi.sync_user_data_offset()), "Cdecl Int")
     }
 
     ; () => UInt
     create_session() {
-        return DllCall(NumGet(this.api, 56, "Ptr"), "Cdecl UInt")
+        return DllCall(this.fp(RimeApi.create_session_offset()), "Cdecl UInt")
     }
 
     ; (UInt) => Int
     find_session(session_id) {
-        return DllCall(NumGet(this.api, 60, "Ptr"), "UInt", session_id, "Cdecl Int")
+        return DllCall(this.fp(RimeApi.find_session_offset()), "UInt", session_id, "Cdecl Int")
     }
 
     ; (UInt) => Int
     destroy_session(session_id) {
-        return DllCall(NumGet(this.api, 64, "Ptr"), "UInt", session_id, "Cdecl Int")
+        return DllCall(this.fp(RimeApi.destroy_session_offset()), "UInt", session_id, "Cdecl Int")
     }
 
     ; () => void
     cleanup_stale_sessions() {
-        DllCall(NumGet(this.api, 68, "Ptr"), "Cdecl")
+        DllCall(this.fp(RimeApi.cleanup_stale_sessions_offset()), "Cdecl")
     }
 
     ; () => void
     cleanup_all_sessions() {
-        DllCall(NumGet(this.api, 72, "Ptr"), "Cdecl")
+        DllCall(this.fp(RimeApi.cleanup_all_sessions_offset()), "Cdecl")
     }
 
     ; (UInt, Int, Int) => Int
     process_key(session_id, keycode, mask) {
-        return DllCall(NumGet(this.api, 76, "Ptr"), "UInt", session_id, "Int", keycode, "Int", mask, "Cdecl Int")
+        return DllCall(this.fp(RimeApi.process_key_offset()), "UInt", session_id, "Int", keycode, "Int", mask, "Cdecl Int")
     }
 
     ; (UInt) => Int
     commit_composition(session_id) {
-        return DllCall(NumGet(this.api, 80, "Ptr"), "UInt", session_id, "Cdecl Int")
+        return DllCall(this.fp(RimeApi.commit_composition_offset()), "UInt", session_id, "Cdecl Int")
     }
 
     ; (UInt) => void
     clear_composition(session_id) {
-        DllCall(NumGet(this.api, 84, "Ptr"), "UInt", session_id, "Cdecl")
+        DllCall(this.fp(RimeApi.clear_composition_offset()), "UInt", session_id, "Cdecl")
     }
 
     ; (UInt) => RimeCommit or 0
     get_commit(session_id) {
         commit := RimeCommit()
-        res := DllCall(NumGet(this.api, 88, "Ptr"), "UInt", session_id, "Ptr", commit.buff.Ptr, "Cdecl Int")
+        res := DllCall(this.fp(RimeApi.get_commit_offset()), "UInt", session_id, "Ptr", commit.buff.Ptr, "Cdecl Int")
         return res ? commit : 0
     }
 
     ; (RimeCommit) => Int
     free_commit(commit) {
-        return DllCall(NumGet(this.api, 92, "Ptr"), "Ptr", commit ? commit.buff.Ptr : 0, "Cdecl Int")
+        return DllCall(this.fp(RimeApi.free_commit_offset()), "Ptr", commit ? commit.buff.Ptr : 0, "Cdecl Int")
     }
 
     ; (UInt) => RimeContext or 0
     get_context(session_id) {
         context := RimeContext()
-        res := DllCall(NumGet(this.api, 96, "Ptr"), "UInt", session_id, "Ptr", context.buff.Ptr, "Cdecl Int")
+        res := DllCall(this.fp(RimeApi.get_context_offset()), "UInt", session_id, "Ptr", context.buff.Ptr, "Cdecl Int")
         return res ? context : 0
     }
 
     ; (RimeContext) => Int
     free_context(context) {
-        return DllCall(NumGet(this.api, 100, "Ptr"), "Ptr", context ? context.buff.Ptr : 0, "Cdecl Int")
+        return DllCall(this.fp(RimeApi.free_context_offset()), "Ptr", context ? context.buff.Ptr : 0, "Cdecl Int")
     }
 
     ; (UInt) => RimeStatus or 0
     get_status(session_id) {
         status := RimeStatus()
-        res := DllCall(NumGet(this.api, 104, "Ptr"), "UInt", session_id, "Ptr", status.buff.Ptr, "Cdecl Int")
+        res := DllCall(this.fp(RimeApi.get_status_offset()), "UInt", session_id, "Ptr", status.buff.Ptr, "Cdecl Int")
         return res ? status : 0
     }
 
     ; (RimeStatus) => Int
     free_status(status) {
-        return DllCall(NumGet(this.api, 108, "Ptr"), "Ptr", status ? status.buff.Ptr : 0, "Cdecl Int")
+        return DllCall(this.fp(RimeApi.free_status_offset()), "Ptr", status ? status.buff.Ptr : 0, "Cdecl Int")
     }
 
     ; (UInt, Str, Int) => void
     set_option(session_id, option, value) {
-        DllCall(NumGet(this.api, 112, "Ptr"), "UInt", session_id, "Ptr", UTF8Buffer(option).Ptr, "Int", value, "Cdecl")
+        DllCall(this.fp(RimeApi.set_option_offset()), "UInt", session_id, "Ptr", UTF8Buffer(option).Ptr, "Int", value, "Cdecl")
     }
 
     ; (UInt, Str) => Int
     get_option(session_id, option) {
-        return DllCall(NumGet(this.api, 116, "Ptr"), "UInt", session_id, "Ptr", UTF8Buffer(option).Ptr, "Cdecl Int")
+        return DllCall(this.fp(RimeApi.get_option_offset()), "UInt", session_id, "Ptr", UTF8Buffer(option).Ptr, "Cdecl Int")
     }
 
     ; (UInt, Str, Str) => void
     set_property(session_id, prop, value) {
-        DllCall(NumGet(this.api, 120, "Ptr"), "UInt", session_id, "Ptr", UTF8Buffer(prop).Ptr, "Ptr", UTF8Buffer(value).Ptr, "Cdecl")
+        DllCall(this.fp(RimeApi.set_property_offset()), "UInt", session_id, "Ptr", UTF8Buffer(prop).Ptr, "Ptr", UTF8Buffer(value).Ptr, "Cdecl")
     }
 
     ; (UInt, Str, UInt) => Str
     get_property(session_id, prop, buffer_size := DEFAULT_BUFFER_SIZE()) {
         buf := Buffer(buffer_size)
-        res := DllCall(NumGet(this.api, 124, "Ptr"), "UInt", session_id, "Ptr", UTF8Buffer(prop).Ptr, "Ptr", buf.Ptr, "UInt", buffer_size, "Cdecl Int")
+        res := DllCall(this.fp(RimeApi.get_property_offset()), "UInt", session_id, "Ptr", UTF8Buffer(prop).Ptr, "Ptr", buf.Ptr, "UInt", buffer_size, "Cdecl Int")
         return res ? StrGet(buf.Ptr, "UTF-8") : ""
     }
 
     ; () => RimeSchemaList or 0
     get_schema_list() {
         list := RimeSchemaList()
-        res := DllCall(NumGet(this.api, 128, "Ptr"), "Ptr", list.buff.Ptr, "Cdecl Int")
+        res := DllCall(this.fp(RimeApi.get_schema_list_offset()), "Ptr", list.buff.Ptr, "Cdecl Int")
         return res ? list : 0
     }
 
     ; (RimeSchemaList) => void
     free_schema_list(schema_list) {
-        DllCall(NumGet(this.api, 132, "Ptr"), "Ptr", schema_list ? schema_list.buff.Ptr : 0, "Cdecl")
+        DllCall(this.fp(RimeApi.free_schema_list_offset()), "Ptr", schema_list ? schema_list.buff.Ptr : 0, "Cdecl")
     }
 
     ; (UInt, UInt) => Str
     get_current_schema(session_id, buffer_size := DEFAULT_BUFFER_SIZE()) {
         buf := Buffer(buffer_size)
-        res := DllCall(NumGet(this.api, 136, "Ptr"), "UInt", session_id, "Ptr", buf.Ptr, "UInt", buffer_size, "Cdecl Int")
+        res := DllCall(this.fp(RimeApi.get_current_schema_offset()), "UInt", session_id, "Ptr", buf.Ptr, "UInt", buffer_size, "Cdecl Int")
         return res ? StrGet(buf.Ptr, "UTF-8") : ""
     }
 
     ; (UInt, Str) => Int
     select_schema(session_id, schema_id) {
-        return DllCall(NumGet(this.api, 140, "Ptr"), "UInt", session_id, "Ptr", UTF8Buffer(schema_id).Ptr, "Cdecl Int")
+        return DllCall(this.fp(RimeApi.select_schema_offset()), "UInt", session_id, "Ptr", UTF8Buffer(schema_id).Ptr, "Cdecl Int")
     }
 
     /**
@@ -761,7 +850,7 @@ class RimeApi {
      */
     schema_open(schema_id) {
         config := RimeConfig()
-        res := DllCall(NumGet(this.api, 144, "Ptr"), "Ptr", UTF8Buffer(schema_id).Ptr, "Ptr", config.buff.Ptr, "Cdecl Int")
+        res := DllCall(this.fp(RimeApi.schema_open_offset()), "Ptr", UTF8Buffer(schema_id).Ptr, "Ptr", config.buff.Ptr, "Cdecl Int")
         return res ? config : 0
     }
 
@@ -773,7 +862,7 @@ class RimeApi {
      */
     config_open(config_id) {
         config := RimeConfig()
-        res := DllCall(NumGet(this.api, 148, "Ptr"), "Ptr", UTF8Buffer(config_id).Ptr, "Ptr", config.buff.Ptr, "Cdecl Int")
+        res := DllCall(this.fp(RimeApi.config_open_offset()), "Ptr", UTF8Buffer(config_id).Ptr, "Ptr", config.buff.Ptr, "Cdecl Int")
         return res ? config : 0
     }
 
@@ -785,7 +874,7 @@ class RimeApi {
      * @returns `True` on success, `False` on failure
      */
     config_close(config) {
-        return DllCall(NumGet(this.api, 152, "Ptr"), "Ptr", config ? config.buff.Ptr : 0, "Cdecl Int")
+        return DllCall(this.fp(RimeApi.config_close_offset()), "Ptr", config ? config.buff.Ptr : 0, "Cdecl Int")
     }
 
     /**
@@ -797,7 +886,7 @@ class RimeApi {
      */
     config_exist_bool(config, key) {
         buf := Buffer(INT_SIZE())
-        return DllCall(NumGet(this.api, 156, "Ptr"), "Ptr", config ? config.buff.Ptr : 0, "Ptr", UTF8Buffer(key).Ptr, "Ptr", buf.Ptr, "Cdecl Int")
+        return DllCall(this.fp(RimeApi.config_get_bool_offset()), "Ptr", config ? config.buff.Ptr : 0, "Ptr", UTF8Buffer(key).Ptr, "Ptr", buf.Ptr, "Cdecl Int")
     }
 
     /**
@@ -811,7 +900,7 @@ class RimeApi {
      */
     config_get_bool(config, key) {
         buf := Buffer(INT_SIZE())
-        res := DllCall(NumGet(this.api, 156, "Ptr"), "Ptr", config ? config.buff.Ptr : 0, "Ptr", UTF8Buffer(key).Ptr, "Ptr", buf.Ptr, "Cdecl Int")
+        res := DllCall(this.fp(RimeApi.config_get_bool_offset()), "Ptr", config ? config.buff.Ptr : 0, "Ptr", UTF8Buffer(key).Ptr, "Ptr", buf.Ptr, "Cdecl Int")
         return res ? NumGet(buf, "Int") : 0
     }
 
@@ -825,7 +914,7 @@ class RimeApi {
      */
     config_test_get_bool(config, key, &value) {
         buf := Buffer(INT_SIZE())
-        if res := DllCall(NumGet(this.api, 156, "Ptr"), "Ptr", config ? config.buff.Ptr : 0, "Ptr", UTF8Buffer(key).Ptr, "Ptr", buf.Ptr, "Cdecl Int")
+        if res := DllCall(this.fp(RimeApi.config_get_bool_offset()), "Ptr", config ? config.buff.Ptr : 0, "Ptr", UTF8Buffer(key).Ptr, "Ptr", buf.Ptr, "Cdecl Int")
             value := NumGet(buf, "Int")
         return res
     }
@@ -839,7 +928,7 @@ class RimeApi {
      */
     config_exist_int(config, key) {
         buf := Buffer(INT_SIZE())
-        return DllCall(NumGet(this.api, 160, "Ptr"), "Ptr", config ? config.buff.Ptr : 0, "Ptr", UTF8Buffer(key).Ptr, "Ptr", buf.Ptr, "Cdecl Int")
+        return DllCall(this.fp(RimeApi.config_get_int_offset()), "Ptr", config ? config.buff.Ptr : 0, "Ptr", UTF8Buffer(key).Ptr, "Ptr", buf.Ptr, "Cdecl Int")
     }
 
     /**
@@ -853,7 +942,7 @@ class RimeApi {
      */
     config_get_int(config, key) {
         buf := Buffer(INT_SIZE())
-        res := DllCall(NumGet(this.api, 160, "Ptr"), "Ptr", config ? config.buff.Ptr : 0, "Ptr", UTF8Buffer(key).Ptr, "Ptr", buf.Ptr, "Cdecl Int")
+        res := DllCall(this.fp(RimeApi.config_get_int_offset()), "Ptr", config ? config.buff.Ptr : 0, "Ptr", UTF8Buffer(key).Ptr, "Ptr", buf.Ptr, "Cdecl Int")
         return res ? NumGet(buf, "Int") : 0
     }
 
@@ -867,7 +956,7 @@ class RimeApi {
      */
     config_test_get_int(config, key, &value) {
         buf := Buffer(INT_SIZE())
-        if res := DllCall(NumGet(this.api, 160, "Ptr"), "Ptr", config ? config.buff.Ptr : 0, "Ptr", UTF8Buffer(key).Ptr, "Ptr", buf.Ptr, "Cdecl Int")
+        if res := DllCall(this.fp(RimeApi.config_get_int_offset()), "Ptr", config ? config.buff.Ptr : 0, "Ptr", UTF8Buffer(key).Ptr, "Ptr", buf.Ptr, "Cdecl Int")
             value := NumGet(buf, "Int")
         return res
     }
@@ -881,7 +970,7 @@ class RimeApi {
      */
     config_exist_double(config, key) {
         buf := Buffer(INT_SIZE() * 2)
-        return DllCall(NumGet(this.api, 164, "Ptr"), "Ptr", config ? config.buff.Ptr : 0, "Ptr", UTF8Buffer(key).Ptr, "Ptr", buf.Ptr, "Cdecl Int")
+        return DllCall(this.fp(RimeApi.config_get_double_offset()), "Ptr", config ? config.buff.Ptr : 0, "Ptr", UTF8Buffer(key).Ptr, "Ptr", buf.Ptr, "Cdecl Int")
     }
 
     ; (RimeConfig, Str) => Double
@@ -896,7 +985,7 @@ class RimeApi {
      */
     config_get_double(config, key) {
         buf := Buffer(INT_SIZE() * 2)
-        res := DllCall(NumGet(this.api, 164, "Ptr"), "Ptr", config ? config.buff.Ptr : 0, "Ptr", UTF8Buffer(key).Ptr, "Ptr", buf.Ptr, "Cdecl Int")
+        res := DllCall(this.fp(RimeApi.config_get_double_offset()), "Ptr", config ? config.buff.Ptr : 0, "Ptr", UTF8Buffer(key).Ptr, "Ptr", buf.Ptr, "Cdecl Int")
         return res ? NumGet(buf, "Double") : 0
     }
 
@@ -910,7 +999,7 @@ class RimeApi {
      */
     config_test_get_double(config, key, &value) {
         buf := Buffer(INT_SIZE() * 2)
-        if res := DllCall(NumGet(this.api, 164, "Ptr"), "Ptr", config ? config.buff.Ptr : 0, "Ptr", UTF8Buffer(key).Ptr, "Ptr", buf.Ptr, "Cdecl Int")
+        if res := DllCall(this.fp(RimeApi.config_get_double_offset()), "Ptr", config ? config.buff.Ptr : 0, "Ptr", UTF8Buffer(key).Ptr, "Ptr", buf.Ptr, "Cdecl Int")
             value := NumGet(buf, "Double")
         return res
     }
@@ -925,7 +1014,7 @@ class RimeApi {
      */
     config_get_string(config, key, buffer_size := DEFAULT_BUFFER_SIZE()) {
         buf := Buffer(buffer_size)
-        res := DllCall(NumGet(this.api, 168, "Ptr"), "Ptr", config ? config.buff.Ptr : 0, "Ptr", UTF8Buffer(key).Ptr, "Ptr", buf.Ptr, "UInt", buffer_size, "Cdecl Int")
+        res := DllCall(this.fp(RimeApi.config_get_string_offset()), "Ptr", config ? config.buff.Ptr : 0, "Ptr", UTF8Buffer(key).Ptr, "Ptr", buf.Ptr, "UInt", buffer_size, "Cdecl Int")
         return res ? StrGet(buf.Ptr, "UTF-8") : ""
     }
 
@@ -939,7 +1028,7 @@ class RimeApi {
      * @returns `True` on success, `False` on failure
      */
     config_update_signature(config, signer) {
-        return DllCall(NumGet(this.api, 172, "Ptr"), "Ptr", config ? config.buff.Ptr : 0, "Ptr", UTF8Buffer(signer).Ptr, "Cdecl Int")
+        return DllCall(this.fp(RimeApi.config_update_signature_offset()), "Ptr", config ? config.buff.Ptr : 0, "Ptr", UTF8Buffer(signer).Ptr, "Cdecl Int")
     }
 
     /**
@@ -951,7 +1040,7 @@ class RimeApi {
      */
     config_begin_map(config, key) {
         iterator := RimeConfigIterator()
-        res := DllCall(NumGet(this.api, 180, "Ptr"), "Ptr", iterator.buff.Ptr, "Ptr", config ? config.buff.Ptr : 0, "Ptr", UTF8Buffer(key).Ptr, "Cdecl Int")
+        res := DllCall(this.fp(RimeApi.config_begin_map_offset()), "Ptr", iterator.buff.Ptr, "Ptr", config ? config.buff.Ptr : 0, "Ptr", UTF8Buffer(key).Ptr, "Cdecl Int")
         return res ? iterator : 0
     }
 
@@ -963,7 +1052,7 @@ class RimeApi {
      * @returns `True` if not end, `False` if end
      */
     config_next(iterator) {
-        return DllCall(NumGet(this.api, 184, "Ptr"), "Ptr", iterator ? iterator.buff.Ptr : 0, "Cdecl Int")
+        return DllCall(this.fp(RimeApi.config_next_offset()), "Ptr", iterator ? iterator.buff.Ptr : 0, "Cdecl Int")
     }
 
     /**
@@ -972,12 +1061,12 @@ class RimeApi {
      * @param iterator type of `RimeConfigIterator`
      */
     config_end(iterator) {
-        DllCall(NumGet(this.api, 188, "Ptr"), "Ptr", iterator ? iterator.buff.Ptr : 0, "Cdecl")
+        DllCall(this.fp(RimeApi.config_end_offset()), "Ptr", iterator ? iterator.buff.Ptr : 0, "Cdecl")
     }
 
     ; (UInt, Str) => Int
     simulate_key_sequence(session_id, key_sequence) {
-        return DllCall(NumGet(this.api, 192, "Ptr"), "UInt", session_id, "Ptr", UTF8Buffer(key_sequence).Ptr, "Cdecl Int")
+        return DllCall(this.fp(RimeApi.simulate_key_sequence_offset()), "UInt", session_id, "Ptr", UTF8Buffer(key_sequence).Ptr, "Cdecl Int")
     }
 
     /**
@@ -986,10 +1075,17 @@ class RimeApi {
      * @returns `True` on success, `False` on failure
      */
     register_module(module) {
-        return DllCall(NumGet(this.api, 196, "Ptr"), "Ptr", module ? module.buff.Ptr : 0, "Cdecl Int")
+        return DllCall(this.fp(RimeApi.register_module_offset()), "Ptr", module ? module.buff.Ptr : 0, "Cdecl Int")
     }
 
-    find_module := module_name => DllCall(NumGet(this.api, 200, "Ptr"), "Ptr", UTF8Buffer(module_name).Ptr, "Cdecl Ptr")
+    /**
+     * 
+     * @param module_name type of `Str`
+     * @returns the pointer to `rime_module_t` struct
+     */
+    find_module(module_name) {
+        return DllCall(this.fp(RimeApi.find_module_offset()), "Ptr", UTF8Buffer(module_name).Ptr, "Cdecl Ptr")
+    }
 
     /**
      * Run task
@@ -998,33 +1094,33 @@ class RimeApi {
      * @returns `True` on success, `False` on failure
      */
     run_task(task_name) {
-        return DllCall(NumGet(this.api, 204, "Ptr"), "Ptr", UTF8Buffer(task_name).Ptr, "Cdecl Int")
+        return DllCall(this.fp(RimeApi.run_task_offset()), "Ptr", UTF8Buffer(task_name).Ptr, "Cdecl Int")
     }
 
     ; () => Str
     get_shared_data_dir() {
-        if p := DllCall(NumGet(this.api, 208, "Ptr"), "Cdecl Ptr")
+        if p := DllCall(this.fp(RimeApi.get_shared_data_dir_offset()), "Cdecl Ptr")
             return StrGet(p, "UTF-8")
         return ""
     }
 
     ; () => Str
     get_user_data_dir() {
-        if p := DllCall(NumGet(this.api, 212, "Ptr"), "Cdecl Ptr")
+        if p := DllCall(this.fp(RimeApi.get_user_data_dir_offset()), "Cdecl Ptr")
             return StrGet(p, "UTF-8")
         return ""
     }
 
     ; () => Str
     get_sync_dir() {
-        if p := DllCall(NumGet(this.api, 216, "Ptr"), "Cdecl Ptr")
+        if p := DllCall(this.fp(RimeApi.get_sync_dir_offset()), "Cdecl Ptr")
             return StrGet(p, "UTF-8")
         return ""
     }
 
     ; () => Str
     get_user_id() {
-        if p := DllCall(NumGet(this.api, 220, "Ptr"), "Cdecl Ptr")
+        if p := DllCall(this.fp(RimeApi.get_user_id_offset()), "Cdecl Ptr")
             return StrGet(p, "UTF-8")
         return ""
     }
@@ -1032,7 +1128,7 @@ class RimeApi {
     ; (UInt) => Str
     get_user_data_sync_dir(buffer_size := DEFAULT_BUFFER_SIZE()) {
         buf := Buffer(buffer_size, 0)
-        DllCall(NumGet(this.api, 224, "Ptr"), "Ptr", buf.Ptr, "UInt", buffer_size, "Cdecl")
+        DllCall(this.fp(RimeApi.get_user_data_sync_dir_offset()), "Ptr", buf.Ptr, "UInt", buffer_size, "Cdecl")
         return StrGet(buf.Ptr, "UTF-8")
     }
 
@@ -1045,7 +1141,7 @@ class RimeApi {
      */
     config_init() {
         config := RimeConfig()
-        res := DllCall(NumGet(this.api, 228, "Ptr"), "Ptr", config.buff.Ptr, "Cdecl Int")
+        res := DllCall(this.fp(RimeApi.config_init_offset()), "Ptr", config.buff.Ptr, "Cdecl Int")
         return res ? config : 0
     }
 
@@ -1057,7 +1153,7 @@ class RimeApi {
      */
     config_load_string(yaml) {
         config := RimeConfig()
-        res := DllCall(NumGet(this.api, 232, "Ptr"), "Ptr", config.buff.Ptr, "Ptr", UTF8Buffer(yaml).Ptr, "Cdecl Int")
+        res := DllCall(this.fp(RimeApi.config_load_string_offset()), "Ptr", config.buff.Ptr, "Ptr", UTF8Buffer(yaml).Ptr, "Cdecl Int")
         return res ? config : 0
     }
 
@@ -1070,7 +1166,7 @@ class RimeApi {
      * @returns `True` on success, `False` on failure
      */
     config_set_bool(config, key, value) {
-        return DllCall(NumGet(this.api, 236, "Ptr"), "Ptr", config ? config.buff.Ptr : 0, "Ptr", UTF8Buffer(key).Ptr, "Int", value, "Cdecl Int")
+        return DllCall(this.fp(RimeApi.config_set_bool_offset()), "Ptr", config ? config.buff.Ptr : 0, "Ptr", UTF8Buffer(key).Ptr, "Int", value, "Cdecl Int")
     }
 
     /**
@@ -1082,7 +1178,7 @@ class RimeApi {
      * @returns `True` on success, `False` on failure
      */
     config_set_int(config, key, value) {
-        return DllCall(NumGet(this.api, 240, "Ptr"), "Ptr", config ? config.buff.Ptr : 0, "Ptr", UTF8Buffer(key).Ptr, "Int", value, "Cdecl Int")
+        return DllCall(this.fp(RimeApi.config_set_int_offset()), "Ptr", config ? config.buff.Ptr : 0, "Ptr", UTF8Buffer(key).Ptr, "Int", value, "Cdecl Int")
     }
 
     /**
@@ -1094,7 +1190,7 @@ class RimeApi {
      * @returns `True` on success, `False` on failure
      */
     config_set_double(config, key, value) {
-        return DllCall(NumGet(this.api, 244, "Ptr"), "Ptr", config ? config.buff.Ptr : 0, "Ptr", UTF8Buffer(key).Ptr, "Double", value, "Cdecl Int")
+        return DllCall(this.fp(RimeApi.config_set_double_offset()), "Ptr", config ? config.buff.Ptr : 0, "Ptr", UTF8Buffer(key).Ptr, "Double", value, "Cdecl Int")
     }
 
     /**
@@ -1106,7 +1202,7 @@ class RimeApi {
      * @returns `True` on success, `False` on failure
      */
     config_set_string(config, key, value) {
-        return DllCall(NumGet(this.api, 248, "Ptr"), "Ptr", config ? config.buff.Ptr : 0, "Ptr", UTF8Buffer(key).Ptr, "Ptr", UTF8Buffer(value).Ptr, "Cdecl Int")
+        return DllCall(this.fp(RimeApi.config_set_string_offset()), "Ptr", config ? config.buff.Ptr : 0, "Ptr", UTF8Buffer(key).Ptr, "Ptr", UTF8Buffer(value).Ptr, "Cdecl Int")
     }
 
     /**
@@ -1118,7 +1214,7 @@ class RimeApi {
      */
     config_get_item(config, key) {
         value := RimeConfig()
-        res := DllCall(NumGet(this.api, 252, "Ptr"), "Ptr", config ? config.buff.Ptr : 0, "Ptr", UTF8Buffer(key).Ptr, "Ptr", value.buff.Ptr, "Cdecl Int")
+        res := DllCall(this.fp(RimeApi.config_get_item_offset()), "Ptr", config ? config.buff.Ptr : 0, "Ptr", UTF8Buffer(key).Ptr, "Ptr", value.buff.Ptr, "Cdecl Int")
         return res ? value : 0
     }
 
@@ -1131,7 +1227,7 @@ class RimeApi {
      * @returns `True` on success, `False` on failure
      */
     config_set_item(config, key, value) {
-        return DllCall(NumGet(this.api, 256, "Ptr"), "Ptr", config ? config.buff.Ptr : 0, "Ptr", UTF8Buffer(key).Ptr, "Ptr", value ? value.buff.Ptr : 0, "Cdecl Int")
+        return DllCall(this.fp(RimeApi.config_set_item_offset()), "Ptr", config ? config.buff.Ptr : 0, "Ptr", UTF8Buffer(key).Ptr, "Ptr", value ? value.buff.Ptr : 0, "Cdecl Int")
     }
 
     /**
@@ -1142,7 +1238,7 @@ class RimeApi {
      * @returns `True` on success, `False` on failure
      */
     config_clear(config, key) {
-        return DllCall(NumGet(this.api, 260, "Ptr"), "Ptr", config ? config.buff.Ptr : 0, "Ptr", UTF8Buffer(key).Ptr, "Cdecl Int")
+        return DllCall(this.fp(RimeApi.config_clear_offset()), "Ptr", config ? config.buff.Ptr : 0, "Ptr", UTF8Buffer(key).Ptr, "Cdecl Int")
     }
 
     /**
@@ -1153,7 +1249,7 @@ class RimeApi {
      * @returns `True` on success, `False` on failure
      */
     config_create_list(config, key) {
-        return DllCall(NumGet(this.api, 264, "Ptr"), "Ptr", config ? config.buff.Ptr : 0, "Ptr", UTF8Buffer(key).Ptr, "Cdecl Int")
+        return DllCall(this.fp(RimeApi.config_create_list_offset()), "Ptr", config ? config.buff.Ptr : 0, "Ptr", UTF8Buffer(key).Ptr, "Cdecl Int")
     }
 
     /**
@@ -1164,7 +1260,7 @@ class RimeApi {
      * @returns `True` on success, `False` on failure
      */
     config_create_map(config, key) {
-        return DllCall(NumGet(this.api, 268, "Ptr"), "Ptr", config ? config.buff.Ptr : 0, "Ptr", UTF8Buffer(key).Ptr, "Cdecl Int")
+        return DllCall(this.fp(RimeApi.config_create_map_offset()), "Ptr", config ? config.buff.Ptr : 0, "Ptr", UTF8Buffer(key).Ptr, "Cdecl Int")
     }
 
     /**
@@ -1175,7 +1271,7 @@ class RimeApi {
      * @returns the size of desired list
      */
     config_list_size(config, key) {
-        return DllCall(NumGet(this.api, 272, "Ptr"), "Ptr", config ? config.buff.Ptr : 0, "Ptr", UTF8Buffer(key).Ptr, "Cdecl UInt") ; returns size_t
+        return DllCall(this.fp(RimeApi.config_list_size_offset()), "Ptr", config ? config.buff.Ptr : 0, "Ptr", UTF8Buffer(key).Ptr, "Cdecl UInt") ; returns size_t
     }
 
     /**
@@ -1187,59 +1283,59 @@ class RimeApi {
      */
     config_begin_list(config, key) {
         iterator := RimeConfigIterator()
-        res := DllCall(NumGet(this.api, 276, "Ptr"), "Ptr", iterator.buff.Ptr, "Ptr", config ? config.buff.Ptr : 0, "Ptr", UTF8Buffer(key).Ptr, "Cdecl Int")
+        res := DllCall(this.fp(RimeApi.config_begin_list_offset()), "Ptr", iterator.buff.Ptr, "Ptr", config ? config.buff.Ptr : 0, "Ptr", UTF8Buffer(key).Ptr, "Cdecl Int")
         return res ? iterator : 0
     }
 
     ; (UInt) => Str
     get_input(session_id) {
-        if p := DllCall(NumGet(this.api, 280, "Ptr"), "UInt", session_id, "Cdecl Ptr")
+        if p := DllCall(this.fp(RimeApi.get_input_offset()), "UInt", session_id, "Cdecl Ptr")
             return StrGet(p, "UTF-8")
         return ""
     }
 
     ; (UInt) => UInt
     get_caret_pos(session_id) {
-        return DllCall(NumGet(this.api, 284, "Ptr"), "UInt", session_id, "Cdecl UInt")
+        return DllCall(this.fp(RimeApi.get_caret_pos_offset()), "UInt", session_id, "Cdecl UInt")
     }
 
     ; (UInt, UInt) => Int
     select_candidate(session_id, index) {
-        return DllCall(NumGet(this.api, 288, "Ptr"), "UInt", session_id, "UInt", index, "Cdecl Int")
+        return DllCall(this.fp(RimeApi.select_candidate_offset()), "UInt", session_id, "UInt", index, "Cdecl Int")
     }
 
     ; () => Str
     get_version() {
-        if p := DllCall(NumGet(this.api, 292, "Ptr"), "Cdecl Ptr")
+        if p := DllCall(this.fp(RimeApi.get_version_offset()), "Cdecl Ptr")
             return StrGet(p, "UTF-8")
         return ""
     }
 
     ; (UInt, UInt) => void
     set_caret_pos(session_id, caret_pos) {
-        DllCall(NumGet(this.api, 296, "Ptr"), "UInt", session_id, "UInt", caret_pos, "Cdecl")
+        DllCall(this.fp(RimeApi.set_caret_pos_offset()), "UInt", session_id, "UInt", caret_pos, "Cdecl")
     }
 
     ; (UInt, UInt) => Int
     select_candidate_on_current_page(session_id, index) {
-        return DllCall(NumGet(this.api, 300, "Ptr"), "UInt", session_id, "UInt", index, "Cdecl Int")
+        return DllCall(this.fp(RimeApi.select_candidate_on_current_page_offset()), "UInt", session_id, "UInt", index, "Cdecl Int")
     }
 
     ; (UInt) => RimeCandidateListIterator or 0
     candidate_list_begin(session_id) {
         iter := RimeCandidateListIterator()
-        res := DllCall(NumGet(this.api, 304, "Ptr"), "UInt", session_id, "Ptr", iter.buff.Ptr, "Cdecl Int")
+        res := DllCall(this.fp(RimeApi.candidate_list_begin_offset()), "UInt", session_id, "Ptr", iter.buff.Ptr, "Cdecl Int")
         return res ? iter : 0
     }
 
     ; (RimeCandidateListIterator) => Int
     candidate_list_next(iterator) {
-        return DllCall(NumGet(this.api, 308, "Ptr"), "Ptr", iterator ? iterator.buff.Ptr : 0, "Cdecl Int")
+        return DllCall(this.fp(RimeApi.candidate_list_next_offset()), "Ptr", iterator ? iterator.buff.Ptr : 0, "Cdecl Int")
     }
 
     ; (RimeCandidateListIterator) => void
     candidate_list_end(iterator) {
-        DllCall(NumGet(this.api, 312, "Ptr"), "Ptr", iterator ? iterator.buff.Ptr : 0, "Cdecl")
+        DllCall(this.fp(RimeApi.candidate_list_end_offset()), "Ptr", iterator ? iterator.buff.Ptr : 0, "Cdecl")
     }
 
     /**
@@ -1250,25 +1346,25 @@ class RimeApi {
      */
     user_config_open(config_id) {
         config := RimeConfig()
-        res := DllCall(NumGet(this.api, 316, "Ptr"), "Ptr", UTF8Buffer(config_id).Ptr, "Ptr", config.buff.Ptr, "Cdecl Int")
+        res := DllCall(this.fp(RimeApi.user_config_open_offset()), "Ptr", UTF8Buffer(config_id).Ptr, "Ptr", config.buff.Ptr, "Cdecl Int")
         return res ? config : 0
     }
 
     ; (UInt, RimeCandidateListIterator, UInt) => Int
     candidate_list_from_index(session_id, iterator, index) {
-        return DllCall(NumGet(this.api, 320, "Ptr"), "UInt", session_id, "Ptr", iterator ? iterator.buff.Ptr : 0, "UInt", index, "Cdecl Int")
+        return DllCall(this.fp(RimeApi.candidate_list_from_index_offset()), "UInt", session_id, "Ptr", iterator ? iterator.buff.Ptr : 0, "UInt", index, "Cdecl Int")
     }
 
     ; () => Str
     get_prebuilt_data_dir() {
-        if p := DllCall(NumGet(this.api, 324, "Ptr"), "Cdecl Ptr")
+        if p := DllCall(this.fp(RimeApi.get_prebuilt_data_dir_offset()), "Cdecl Ptr")
             return StrGet(p, "UTF-8")
         return ""
     }
 
     ; () => Str
     get_staging_dir() {
-        if p := DllCall(NumGet(this.api, 328, "Ptr"), "Cdecl Ptr")
+        if p := DllCall(this.fp(RimeApi.get_staging_dir_offset()), "Cdecl Ptr")
             return StrGet(p, "UTF-8")
         return ""
     }
@@ -1280,19 +1376,19 @@ class RimeApi {
 
     ; (UInt, Str, Int) => Str
     get_state_label(session_id, option_name, state) {
-        if p := DllCall(NumGet(this.api, 344, "Ptr"), "UInt", session_id, "Ptr", UTF8Buffer(option_name).Ptr, "Int", state, "Cdecl Ptr")
+        if p := DllCall(this.fp(RimeApi.get_state_label_offset()), "UInt", session_id, "Ptr", UTF8Buffer(option_name).Ptr, "Int", state, "Cdecl Ptr")
             return StrGet(p, "UTF-8")
         return ""
     }
 
     ; (UInt, UInt) => Int
     delete_candidate(session_id, index) {
-        return DllCall(NumGet(this.api, 348, "Ptr"), "UInt", session_id, "UInt", index, "Cdecl Int")
+        return DllCall(this.fp(RimeApi.delete_candidate_offset()), "UInt", session_id, "UInt", index, "Cdecl Int")
     }
 
     ; (UInt, UInt) => Int
     delete_candidate_on_current_page(session_id, index) {
-        return DllCall(NumGet(this.api, 352, "Ptr"), "UInt", session_id, "UInt", index, "Cdecl Int")
+        return DllCall(this.fp(RimeApi.delete_candidate_on_current_page_offset()), "UInt", session_id, "UInt", index, "Cdecl Int")
     }
 
     /**
@@ -1307,9 +1403,9 @@ class RimeApi {
      * @returns `RimeStringSlice` on success, `0` on failure
      */
     get_state_label_abbreviated(session_id, option_name, state, abbreviated) {
-        if this.data_size < 356 or A_PtrSize > 4
+        if this.data_size < RimeApi.get_state_label_abbreviated_offset() or A_PtrSize > 4
             return 0
-        res := DllCall(NumGet(this.api, 356, "Ptr"), "UInt", session_id, "Ptr", UTF8Buffer(option_name).Ptr, "Int", state, "Int", abbreviated, "Cdecl Int64")
+        res := DllCall(this.fp(RimeApi.get_state_label_abbreviated_offset()), "UInt", session_id, "Ptr", UTF8Buffer(option_name).Ptr, "Int", state, "Int", abbreviated, "Cdecl Int64")
         try
             str := StrGet(res & 0xffffffff, "UTF-8")
         catch as e
