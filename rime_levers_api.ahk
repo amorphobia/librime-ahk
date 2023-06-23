@@ -325,7 +325,7 @@ class RimeLeversApi {
      * @returns `True` on success, `False` on failure
      */
     select_schemas(settings, schema_id_list) {
-        list_buff := Buffer(schema_id_list.Length * A_PtrSize)
+        list_buff := Buffer(schema_id_list.Length * A_PtrSize + 1, 0)
         buff_array := Array()
         count := 0
         for index, schema_id in schema_id_list {

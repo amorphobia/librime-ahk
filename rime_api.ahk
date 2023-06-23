@@ -91,7 +91,30 @@ class RimeTraits {
         get => UTF8StrGet(this.buff.Ptr, RimeTraits.app_name_offset())
         set => this.__app_name := UTF8StrPut(Value, this.buff.Ptr, RimeTraits.app_name_offset())
     }
-    ; modules
+    modules {
+        get {
+            res := Array()
+            ptr := NumGet(this.buff, RimeTraits.modules_offset(), "Ptr")
+            Loop {
+                if not module := UTF8StrGet(ptr, (A_Index - 1) * A_PtrSize)
+                    break
+                res.Push(module)
+            }
+            return res
+        }
+        set {
+            this.__modules := Buffer(Value.Length * A_PtrSize + 1, 0)
+            this.__modules_buff_array := Array()
+            for index, module in Value {
+                if not IsSet(module)
+                    break
+                buff := UTF8Buffer(module)
+                NumPut("Ptr", buff.Ptr, this.__modules, (index - 1) * A_PtrSize)
+                this.__modules_buff_array.Push(buff)
+            }
+            NumPut("Ptr", this.__modules.Ptr, this.buff, RimeTraits.modules_offset())
+        }
+    }
     min_log_level {
         get => NumGet(this.buff, RimeTraits.min_log_level_offset(), "Int")
         set => NumPut("Int", Value, this.buff, RimeTraits.min_log_level_offset())
@@ -1018,8 +1041,16 @@ class RimeApi {
         return res ? StrGet(buf.Ptr, "UTF-8") : ""
     }
 
-    ; TODO: it seems this function fetches the raw string of yaml, need furthre confirming
-    ; config_get_cstring, offset 172
+    /**
+     * 
+     * @param config type of `RimeConfig`
+     * @param key type of `Str`
+     * @returns `Str`
+     */
+    config_get_cstring(config, key) {
+        p := DllCall(this.fp(RimeApi.config_get_cstring_offset()), "Ptr", config ? config.buff.Ptr : 0, "Ptr", UTF8Buffer(key).Ptr, "Cdecl Ptr")
+        return p ? StrGet(p, "UTF-8") : ""
+    }
 
     /**
      * 
@@ -1044,7 +1075,6 @@ class RimeApi {
         return res ? iterator : 0
     }
 
-    ; config_next, offset 184
     /**
      * Increment the config iterator
      * 
@@ -1369,10 +1399,12 @@ class RimeApi {
         return ""
     }
 
-    ; Deprecated - nullptr
-    ; commit_proto, offset 332
-    ; context_proto, offset 336
-    ; status_proto, offset 340
+    ; Deprecated
+    commit_proto := (*) => 0
+    ; Deprecated
+    context_proto := (*) => 0
+    ; Deprecated
+    status_proto := (*) => 0
 
     ; (UInt, Str, Int) => Str
     get_state_label(session_id, option_name, state) {
