@@ -517,15 +517,13 @@ class RimeStringSlice {
 ; RimeCustomApi
 
 class RimeModule {
-    __New(rime := 0, module_name := "") {
-        this.buff := 0
-        this.module := 0
-        if rime and module_name
-            this.module := rime.find_module(module_name)
-        if not this.module {
-            this.buff := Buffer(RimeModule.buffer_size(), 0)
-            this.data_size := RimeModule.buffer_size() - INT_SIZE()
-            this.module_name := module_name
+    __New(ptr := 0) {
+        this.buff := Buffer(RimeModule.buffer_size(), 0)
+        if ptr {
+            Loop RimeModule.buffer_size() {
+                byte := NumGet(ptr, A_Index - 1, "Char")
+                NumPut("Char", byte, this.buff, A_Index - 1)
+            }
         }
     }
 
@@ -536,19 +534,17 @@ class RimeModule {
     static get_api_offset := (*) => RimeModule.finalize_offset() + A_PtrSize
     static buffer_size := (*) => RimeModule.get_api_offset() + A_PtrSize
 
-    ptr := (*) => this.buff ? this.buff.Ptr : this.module
-
     data_size {
-        get => NumGet(this.ptr(), RimeModule.data_size_offset(), "Int")
-        set => NumPut("Int", Value, this.ptr(), RimeModule.data_size_offset())
+        get => NumGet(this.buff.Ptr, RimeModule.data_size_offset(), "Int")
+        set => NumPut("Int", Value, this.buff.Ptr, RimeModule.data_size_offset())
     }
     module_name {
-        get => UTF8StrGet(this.ptr(), RimeModule.module_name_offset())
-        set => this.__module_name := UTF8StrPut(Value, this.ptr(), RimeModule.module_name_offset())
+        get => UTF8StrGet(this.buff.Ptr, RimeModule.module_name_offset())
+        set => this.__module_name := UTF8StrPut(Value, this.buff.Ptr, RimeModule.module_name_offset())
     }
-    initialize := (*) => DllCall(NumGet(this.ptr(), RimeModule.initialize_offset(), "Ptr"), "Cdecl")
-    finalize := (*) => DllCall(NumGet(this.ptr(), RimeModule.finalize_offset(), "Ptr"), "Cdecl")
-    get_api := (*) => DllCall(NumGet(this.ptr(), RimeModule.get_api_offset(), "Ptr"), "Cdecl Ptr")
+    initialize := (*) => DllCall(NumGet(this.buff.Ptr, RimeModule.initialize_offset(), "Ptr"), "Cdecl")
+    finalize := (*) => DllCall(NumGet(this.buff.Ptr, RimeModule.finalize_offset(), "Ptr"), "Cdecl")
+    get_api := (*) => DllCall(NumGet(this.buff.Ptr, RimeModule.get_api_offset(), "Ptr"), "Cdecl Ptr")
 } ; RimeModule
 
 class RimeApi {
@@ -1111,10 +1107,11 @@ class RimeApi {
     /**
      * 
      * @param module_name type of `Str`
-     * @returns the pointer to `rime_module_t` struct
+     * @returns `RimeModule` onsuccess, `0` onfailure
      */
     find_module(module_name) {
-        return DllCall(this.fp(RimeApi.find_module_offset()), "Ptr", UTF8Buffer(module_name).Ptr, "Cdecl Ptr")
+        res := DllCall(this.fp(RimeApi.find_module_offset()), "Ptr", UTF8Buffer(module_name).Ptr, "Cdecl Ptr")
+        return res ? RimeModule(res) : 0
     }
 
     /**

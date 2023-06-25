@@ -23,7 +23,7 @@
  *
  */
 #Requires AutoHotkey v2.0 32-bit
-#Include rime_api.ahk
+#Include "..\rime_api.ahk"
 
 Print(GuiCtrlObj, output) {
     static text
