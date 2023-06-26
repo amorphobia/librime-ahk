@@ -59,9 +59,9 @@ class RimeUserDictIterator {
 
 class RimeLeversApi {
     __New(rime := RimeApi()) {
-        if not rime or not module := rime.find_module("levers")
+        if not rime or not this.module := rime.find_module("levers")
             throw Error("获取 Levers API 失败！")
-        this.api := module.get_api()
+        this.api := this.module.get_api()
     }
 
     static data_size_offset := (*) => 0

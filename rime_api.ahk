@@ -549,7 +549,7 @@ class RimeModule {
 
 class RimeApi {
     __New() {
-        if not RimeApi.rimeDll
+        if not RimeApi.rimeDll and not RimeApi.rimeDll := DllCall("LoadLibrary", "Str", RimeApi.weasel_root . "\rime.dll", "Ptr")
             throw Error("未找到 rime.dll！")
         this.api := DllCall("rime\rime_get_api", "Cdecl Ptr")
         if not this.api
@@ -559,6 +559,7 @@ class RimeApi {
     }
 
     static rimeDll := DllCall("LoadLibrary", "Str", "rime.dll", "Ptr")
+    static weasel_root := RegRead("HKEY_LOCAL_MACHINE\Software\Rime\Weasel", "WeaselRoot", "")
     static min_version := (*) => "1.8.5"
     static data_size_offset := (*) => 0
     static setup_offset := (*) => RimeApi.data_size_offset() + INT_SIZE()
