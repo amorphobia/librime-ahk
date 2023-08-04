@@ -15,7 +15,6 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
  */
-#Requires AutoHotkey v2.0 32-bit
 #Include rime_api.ahk
 
 ; Placeholder class processes the pointer to rime class `CustomSettings`. Do not presume the memory layout
@@ -70,7 +69,7 @@ class RimeLeversApi extends RimeApiStruct {
     }
 
     static data_size_offset := (*) => 0
-    static custom_settings_init_offset := (*) => RimeLeversApi.data_size_offset() + INT_SIZE()
+    static custom_settings_init_offset := (*) => RimeLeversApi.data_size_offset() + INT_SIZE() + INT_PAD()
     static custom_settings_destroy_offset := (*) => RimeLeversApi.custom_settings_init_offset() + A_PtrSize
     static load_settings_offset := (*) => RimeLeversApi.custom_settings_destroy_offset() + A_PtrSize
     static save_settings_offset := (*) => RimeLeversApi.load_settings_offset() + A_PtrSize

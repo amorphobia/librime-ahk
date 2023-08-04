@@ -15,10 +15,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
  */
-#Requires AutoHotkey v2.0 32-bit
-
+ 
 INT_SIZE() {
     return 4
+}
+INT_PAD() {
+    return A_PtrSize == 8 ? 4 : 0
 }
 DEFAULT_BUFFER_SIZE() {
     return 512
@@ -161,7 +163,7 @@ class RimeTraits extends RimeVersionedStruct {
     }
 
     static data_size_offset := (*) => 0
-    static shared_data_dir_offset := (*) => RimeTraits.data_size_offset() + INT_SIZE()
+    static shared_data_dir_offset := (*) => RimeTraits.data_size_offset() + INT_SIZE() + INT_PAD()
     static user_data_dir_offset := (*) => RimeTraits.shared_data_dir_offset() + A_PtrSize
     static distribution_name_offset := (*) => RimeTraits.user_data_dir_offset() + A_PtrSize
     static distribution_code_name_offset := (*) => RimeTraits.distribution_name_offset() + A_PtrSize
@@ -169,7 +171,7 @@ class RimeTraits extends RimeVersionedStruct {
     static app_name_offset := (*) => RimeTraits.distribution_version_offset() + A_PtrSize
     static modules_offset := (*) => RimeTraits.app_name_offset() + A_PtrSize
     static min_log_level_offset := (*) => RimeTraits.modules_offset() + A_PtrSize
-    static log_dir_offset := (*) => RimeTraits.min_log_level_offset() + INT_SIZE()
+    static log_dir_offset := (*) => RimeTraits.min_log_level_offset() + INT_SIZE() + INT_PAD()
     static prebuilt_data_dir_offset := (*) => RimeTraits.log_dir_offset() + A_PtrSize
     static staging_dir_offset := (*) => RimeTraits.prebuilt_data_dir_offset() + A_PtrSize
     static struct_size := (*) => RimeTraits.staging_dir_offset() + A_PtrSize
@@ -289,7 +291,7 @@ class RimeMenu extends RimeStruct {
     static is_last_page_offset := (*) => RimeMenu.page_no_offset() + INT_SIZE()
     static highlighted_candidate_index_offset := (*) => RimeMenu.is_last_page_offset() + INT_SIZE()
     static num_candidates_offset := (*) => RimeMenu.highlighted_candidate_index_offset() + INT_SIZE()
-    static candidates_offset := (*) => RimeMenu.num_candidates_offset() + INT_SIZE()
+    static candidates_offset := (*) => RimeMenu.num_candidates_offset() + INT_SIZE() + INT_PAD()
     static select_keys_offset := (*) => RimeMenu.candidates_offset() + A_PtrSize
     static struct_size := (*) => RimeMenu.select_keys_offset() + A_PtrSize
 
@@ -326,7 +328,7 @@ class RimeCommit extends RimeVersionedStruct {
     }
 
     static data_size_offset := (*) => 0
-    static text_offset := (*) => RimeCommit.data_size_offset() + INT_SIZE()
+    static text_offset := (*) => RimeCommit.data_size_offset() + INT_SIZE() + INT_PAD()
     static struct_size := (*) => RimeCommit.text_offset() + A_PtrSize
 
     struct_ptr := (*) => this.buff.Ptr
@@ -347,7 +349,7 @@ class RimeContext extends RimeVersionedStruct {
     }
 
     static data_size_offset := (*) => 0
-    static composition_offset := (*) => RimeContext.data_size_offset() + INT_SIZE()
+    static composition_offset := (*) => RimeContext.data_size_offset() + INT_SIZE() + INT_PAD()
     static menu_offset := (*) => RimeContext.composition_offset() + RimeComposition.struct_size()
     static commit_text_preview_offset := (*) => RimeContext.menu_offset() + RimeMenu.struct_size()
     static select_labels_offset := (*) => RimeContext.commit_text_preview_offset() + A_PtrSize
@@ -374,7 +376,7 @@ class RimeStatus extends RimeVersionedStruct {
     }
 
     static data_size_offset := (*) => 0
-    static schema_id_offset := (*) => RimeStatus.data_size_offset() + INT_SIZE()
+    static schema_id_offset := (*) => RimeStatus.data_size_offset() + INT_SIZE() + INT_PAD()
     static schema_name_offset := (*) => RimeStatus.schema_id_offset() + A_PtrSize
     static is_disabled_offset := (*) => RimeStatus.schema_name_offset() + A_PtrSize
     static is_composing_offset := (*) => RimeStatus.is_disabled_offset() + INT_SIZE()
@@ -383,7 +385,8 @@ class RimeStatus extends RimeVersionedStruct {
     static is_simplified_offset := (*) => RimeStatus.is_full_shape_offset() + INT_SIZE()
     static is_traditional_offset := (*) => RimeStatus.is_simplified_offset() + INT_SIZE()
     static is_ascii_punct_offset := (*) => RimeStatus.is_traditional_offset() + INT_SIZE()
-    static struct_size := (*) => RimeStatus.is_ascii_punct_offset() + INT_SIZE()
+    ; NOTE: is there a tail padding? (which will affect this.data_size)
+    static struct_size := (*) => RimeStatus.is_ascii_punct_offset() + INT_SIZE() + INT_PAD()
 
     struct_ptr := (*) => this.buff.Ptr
 
@@ -426,7 +429,7 @@ class RimeCandidateListIterator extends RimeStruct {
 
     static ptr_offset := (*) => 0
     static index_offset := (*) => RimeCandidateListIterator.ptr_offset() + A_PtrSize
-    static candidate_offset := (*) => RimeCandidateListIterator.index_offset() + INT_SIZE()
+    static candidate_offset := (*) => RimeCandidateListIterator.index_offset() + INT_SIZE() + INT_PAD()
     static struct_size := (*) => RimeCandidateListIterator.candidate_offset() + RimeCandidate.struct_size()
 
     struct_ptr := (*) => this.buff.Ptr
@@ -464,7 +467,7 @@ class RimeConfigIterator extends RimeStruct {
     static list_offset := (*) => 0
     static map_offset := (*) => RimeConfigIterator.list_offset() + A_PtrSize
     static index_offset := (*) => RimeConfigIterator.map_offset() + A_PtrSize
-    static key_offset := (*) => RimeConfigIterator.index_offset() + INT_SIZE()
+    static key_offset := (*) => RimeConfigIterator.index_offset() + INT_SIZE() + INT_PAD()
     static path_offset := (*) => RimeConfigIterator.key_offset() + A_PtrSize
     static struct_size := (*) => RimeConfigIterator.path_offset() + A_PtrSize
 
@@ -572,7 +575,7 @@ class RimeModule extends RimeVersionedStruct {
     }
 
     static data_size_offset := (*) => 0
-    static module_name_offset := (*) => RimeModule.data_size_offset() + INT_SIZE()
+    static module_name_offset := (*) => RimeModule.data_size_offset() + INT_SIZE() + INT_PAD()
     static initialize_offset := (*) => RimeModule.module_name_offset() + A_PtrSize
     static finalize_offset := (*) => RimeModule.initialize_offset() + A_PtrSize
     static get_api_offset := (*) => RimeModule.finalize_offset() + A_PtrSize
@@ -607,7 +610,7 @@ class RimeApi extends RimeApiStruct {
     static weasel_root := RegRead("HKEY_LOCAL_MACHINE\Software\Rime\Weasel", "WeaselRoot", "")
     static min_version := (*) => "1.8.5"
     static data_size_offset := (*) => 0
-    static setup_offset := (*) => RimeApi.data_size_offset() + INT_SIZE()
+    static setup_offset := (*) => RimeApi.data_size_offset() + INT_SIZE() + INT_PAD()
     static set_notification_handler_offset := (*) => RimeApi.setup_offset() + A_PtrSize
     static initialize_offset := (*) => RimeApi.set_notification_handler_offset() + A_PtrSize
     static finalize_offset := (*) => RimeApi.initialize_offset() + A_PtrSize
