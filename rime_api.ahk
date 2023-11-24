@@ -731,10 +731,11 @@ class RimeApi extends RimeApiStruct {
     finalize() {
         DllCall(this.fp(RimeApi.finalize_offset()), "CDecl")
         DllCall("FreeLibrary", "Ptr", RimeApi.rimeDll)
+        RimeApi.rimeDll := 0
     }
 
     ; (Int) => Int
-    start_maintenace(full_check) {
+    start_maintenance(full_check) {
         return DllCall(this.fp(RimeApi.start_maintenance_offset()), "Int", full_check, "CDecl Int")
     }
 
