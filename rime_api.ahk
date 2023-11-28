@@ -68,8 +68,17 @@ class RimeStruct extends Class {
     num_put(type := "Int", val := 0, offset := 0) {
         NumPut(type, val, this.struct_ptr(), offset)
     }
-    c_str_get(src := this.struct_ptr(), offset := 0, encoding := "UTF-8") {
-        return (p := NumGet(src, offset, "Ptr")) ? StrGet(p, encoding) : ""
+    c_str_get(src := this.struct_ptr(), offset := 0, encoding := "UTF-8", length := -1) {
+        if not p := NumGet(src, offset, "Ptr")
+            return ""
+        if length < 0
+            return StrGet(p, encoding)
+        buf := Buffer(length + 1, 0)
+        Loop length {
+            byte := NumGet(p, A_Index - 1, "Char")
+            NumPut("Char", byte, buf.Ptr, A_Index - 1)
+        }
+        return StrGet(buf.Ptr, "UTF-8")
     }
     c_str_put(val, tgt := this.struct_ptr(), offset := 0, encoding := "UTF-8") {
         buf := RimeStruct.c_str(val, encoding)
@@ -555,7 +564,7 @@ class RimeStringSlice extends RimeStruct {
     }
 
     slice {
-        get => SubStr(this.str, 1, this.length)
+        get => this.c_str_get(, RimeStringSlice.str_offset(), , this.length)
     }
 } ; RimeStringSlice
 
