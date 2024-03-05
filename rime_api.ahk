@@ -703,8 +703,19 @@ class RimeApi extends RimeApiStruct {
     static get_state_label_offset := (*) => RimeApi.status_proto_offset() + A_PtrSize
     static delete_candidate_offset := (*) => RimeApi.get_state_label_offset() + A_PtrSize
     static delete_candidate_on_current_page_offset := (*) => RimeApi.delete_candidate_offset() + A_PtrSize
+    ; librime 1.9.0
     static get_state_label_abbreviated_offset := (*) => RimeApi.delete_candidate_on_current_page_offset() + A_PtrSize
-    static struct_size := (*) => RimeApi.get_state_label_abbreviated_offset() + A_PtrSize
+    ; librime 1.10.0
+    static set_input_offset := (*) => RimeApi.get_state_label_abbreviated_offset() + A_PtrSize
+    static get_shared_data_dir_s_offset := (*) => RimeApi.set_input_offset() + A_PtrSize
+    static get_user_data_dir_s_offset := (*) => RimeApi.get_shared_data_dir_s_offset() + A_PtrSize
+    static get_prebuilt_data_dir_s_offset := (*) => RimeApi.get_user_data_dir_s_offset() + A_PtrSize
+    static get_staging_dir_s_offset := (*) => RimeApi.get_prebuilt_data_dir_s_offset() + A_PtrSize
+    static get_sync_dir_s_offset := (*) => RimeApi.get_staging_dir_s_offset() + A_PtrSize
+    static highlight_candidate_offset := (*) => RimeApi.get_sync_dir_s_offset() + A_PtrSize
+    static highlight_candidate_on_current_page_offset := (*) => RimeApi.highlight_candidate_offset() + A_PtrSize
+    static change_page_offset := (*) => RimeApi.highlight_candidate_on_current_page_offset() + A_PtrSize
+    static struct_size := (*) => RimeApi.change_page_offset() + A_PtrSize
 
     struct_ptr := (*) => this.api
 
@@ -1173,21 +1184,21 @@ class RimeApi extends RimeApiStruct {
         return DllCall(this.fp(RimeApi.run_task_offset()), "Ptr", RimeStruct.c_str(task_name).Ptr, "CDecl Int")
     }
 
-    ; () => Str
+    ; () => Str \deprecated use get_shared_data_dir_s instead.
     get_shared_data_dir() {
         if p := DllCall(this.fp(RimeApi.get_shared_data_dir_offset()), "CDecl Ptr")
             return StrGet(p, "UTF-8")
         return ""
     }
 
-    ; () => Str
+    ; () => Str \deprecated use get_user_data_dir_s instead.
     get_user_data_dir() {
         if p := DllCall(this.fp(RimeApi.get_user_data_dir_offset()), "CDecl Ptr")
             return StrGet(p, "UTF-8")
         return ""
     }
 
-    ; () => Str
+    ; () => Str \deprecated use get_sync_dir_s instead.
     get_sync_dir() {
         if p := DllCall(this.fp(RimeApi.get_sync_dir_offset()), "CDecl Ptr")
             return StrGet(p, "UTF-8")
@@ -1431,14 +1442,14 @@ class RimeApi extends RimeApiStruct {
         return DllCall(this.fp(RimeApi.candidate_list_from_index_offset()), "UInt", session_id, "Ptr", iterator ? iterator.struct_ptr() : 0, "UInt", index, "CDecl Int")
     }
 
-    ; () => Str
+    ; () => Str \deprecated use get_prebuilt_data_dir_s instead.
     get_prebuilt_data_dir() {
         if p := DllCall(this.fp(RimeApi.get_prebuilt_data_dir_offset()), "CDecl Ptr")
             return StrGet(p, "UTF-8")
         return ""
     }
 
-    ; () => Str
+    ; () => Str \deprecated use get_staging_dir_s instead.
     get_staging_dir() {
         if p := DllCall(this.fp(RimeApi.get_staging_dir_offset()), "CDecl Ptr")
             return StrGet(p, "UTF-8")
@@ -1494,5 +1505,82 @@ class RimeApi extends RimeApiStruct {
             slice := RimeStringSlice(str, res >> (A_IntSize * A_BitsPerByte))
         }
         return slice
+    }
+
+    /**
+     * 
+     * @param session_id type of `UInt`
+     * @param input type of `Str`
+     * @returns `True` on success, `False` on failure
+     */
+    set_input(session_id, input) {
+        if not this.api_available("set_input")
+            return 0
+        return DllCall(this.fp(RimeApi.set_input_offset()), "UInt", session_id, "Ptr", RimeStruct.c_str(input).Ptr, "CDecl Int")
+    }
+
+    ; (UInt) => Str
+    get_shared_data_dir_s(buffer_size := Rime_BufferSize) {
+        if not this.api_available("get_shared_data_dir_s")
+            return ""
+        buf := Buffer(buffer_size, 0)
+        DllCall(this.fp(RimeApi.get_shared_data_dir_s_offset()), "Ptr", buf.Ptr, "UInt", buffer_size, "CDecl")
+        return StrGet(buf.Ptr, "UTF-8")
+    }
+
+    ; (UInt) => Str
+    get_user_data_dir_s(buffer_size := Rime_BufferSize) {
+        if not this.api_available("get_user_data_dir_s")
+            return ""
+        buf := Buffer(buffer_size, 0)
+        DllCall(this.fp(RimeApi.get_user_data_dir_s_offset()), "Ptr", buf.Ptr, "UInt", buffer_size, "CDecl")
+        return StrGet(buf.Ptr, "UTF-8")
+    }
+
+    ; (UInt) => Str
+    get_prebuilt_data_dir_s(buffer_size := Rime_BufferSize) {
+        if not this.api_available("get_prebuilt_data_dir_s")
+            return ""
+        buf := Buffer(buffer_size, 0)
+        DllCall(this.fp(RimeApi.get_prebuilt_data_dir_s_offset()), "Ptr", buf.Ptr, "UInt", buffer_size, "CDecl")
+        return StrGet(buf.Ptr, "UTF-8")
+    }
+
+    ; (UInt) => Str
+    get_staging_dir_s(buffer_size := Rime_BufferSize) {
+        if not this.api_available("get_staging_dir_s")
+            return ""
+        buf := Buffer(buffer_size, 0)
+        DllCall(this.fp(RimeApi.get_staging_dir_s_offset()), "Ptr", buf.Ptr, "UInt", buffer_size, "CDecl")
+        return StrGet(buf.Ptr, "UTF-8")
+    }
+
+    ; (UInt) => Str
+    get_sync_dir_s(buffer_size := Rime_BufferSize) {
+        if not this.api_available("get_sync_dir_s")
+            return ""
+        buf := Buffer(buffer_size, 0)
+        DllCall(this.fp(RimeApi.get_sync_dir_s_offset()), "Ptr", buf.Ptr, "UInt", buffer_size, "CDecl")
+        return StrGet(buf.Ptr, "UTF-8")
+    }
+
+    ; highlight a selection without committing
+    highlight_candidate(session_id, index) {
+        if not this.api_available("highlight_candidate")
+            return 0
+        return DllCall(this.fp(RimeApi.highlight_candidate_offset()), "UInt", session_id, "UInt", index, "CDecl Int")
+    }
+
+    ; highlight a selection without committing
+    highlight_candidate_on_current_page(session_id, index) {
+        if not this.api_available("highlight_candidate_on_current_page")
+            return 0
+        return DllCall(this.fp(RimeApi.highlight_candidate_on_current_page_offset()), "UInt", session_id, "UInt", index, "CDecl Int")
+    }
+
+    change_page(session_id, backward) {
+        if not this.api_available("change_page")
+            return 0
+        return DllCall(this.fp(RimeApi.change_page_offset()), "UInt", session_id, "UInt", backward, "CDecl Int")
     }
 }
