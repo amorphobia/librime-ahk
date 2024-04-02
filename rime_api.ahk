@@ -602,8 +602,17 @@ class RimeModule extends RimeVersionedStruct {
 
 class RimeApi extends RimeApiStruct {
     __New() {
-        if not RimeApi.rimeDll and not RimeApi.rimeDll := DllCall("LoadLibrary", "Str", RimeApi.weasel_root . "\rime.dll", "Ptr")
-            throw Error("未找到 rime.dll！")
+        if not RimeApi.rimeDll {
+            if librime_lib_dir := EnvGet("LIBRIME_LIB_DIR")
+                RimeApi.rimeDll := DllCall("LoadLibrary", "Str", librime_lib_dir . "\rime.dll", "Ptr")
+
+            if not RimeApi.rimeDll and weasel_root := RegRead("HKEY_LOCAL_MACHINE\Software\Rime\Weasel", "WeaselRoot", "")
+                RimeApi.rimeDll := DllCall("LoadLibrary", "Str", weasel_root . "\rime.dll", "Ptr")
+
+            if not RimeApi.rimeDll
+                throw Error("未找到 rime.dll！")
+        }
+
         this.api := DllCall("rime\rime_get_api", "CDecl Ptr")
         if not this.api
             throw Error("获取 Rime API 失败！")
@@ -612,7 +621,6 @@ class RimeApi extends RimeApiStruct {
     }
 
     static rimeDll := DllCall("LoadLibrary", "Str", "rime.dll", "Ptr")
-    static weasel_root := RegRead("HKEY_LOCAL_MACHINE\Software\Rime\Weasel", "WeaselRoot", "")
     static min_version := (*) => "1.8.5"
     static data_size_offset := (*) => 0
     static setup_offset := (*) => RimeApi.data_size_offset() + A_IntSize + A_IntPaddingSize

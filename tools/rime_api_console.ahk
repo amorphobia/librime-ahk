@@ -231,7 +231,7 @@ main() {
 
     rime.initialize(0)
     full_check := true
-    success := rime.start_maintenace(full_check)
+    success := rime.start_maintenance(full_check)
     if success {
         rime.join_maintenance_thread()
     }
