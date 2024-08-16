@@ -8,5 +8,5 @@ Wraps [RIME](https://github.com/rime/librime) API for easy use in [AutoHotkey](h
 
 ## Dependencies
 
-- AutoHotkey v2, 32-bit
-- librime 1.8.5
+- AutoHotkey v2
+- librime 1.8.5+
