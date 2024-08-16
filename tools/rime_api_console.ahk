@@ -22,7 +22,7 @@
  * 2011-08-29 GONG Chen <chen.sst@gmail.com>
  *
  */
-#Requires AutoHotkey v2.0 32-bit
+#Requires AutoHotkey v2.0
 #Include "..\rime_api.ahk"
 
 Print(GuiCtrlObj, output) {
