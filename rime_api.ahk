@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Xuesong Peng <pengxuesong.cn@gmail.com>
+ * Copyright (c) 2023, 2024 Xuesong Peng <pengxuesong.cn@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -55,21 +55,25 @@ class RimeStruct extends Class {
         }
     }
 
+    ; to eliminate warnings
+    struct_ptr := (*) => 0
+
     copy(src, tgt := this.struct_ptr(), offset := 0, length := %Type(this)%.struct_size()) {
-        if src
+        if src and tgt
             Loop length {
                 byte := NumGet(src, A_Index - 1, "Char")
                 NumPut("Char", byte, tgt, A_Index - 1)
             }
     }
     num_get(offset := 0, type := "Int") {
-        return NumGet(this.struct_ptr(), offset, type)
+        return this.struct_ptr() ? NumGet(this.struct_ptr(), offset, type) : 0
     }
     num_put(type := "Int", val := 0, offset := 0) {
-        NumPut(type, val, this.struct_ptr(), offset)
+        if this.struct_ptr()
+            NumPut(type, val, this.struct_ptr(), offset)
     }
     c_str_get(src := this.struct_ptr(), offset := 0, encoding := "UTF-8", length := -1) {
-        if not p := NumGet(src, offset, "Ptr")
+        if not src or not p := NumGet(src, offset, "Ptr")
             return ""
         if length < 0
             return StrGet(p, encoding)
@@ -81,6 +85,8 @@ class RimeStruct extends Class {
         return StrGet(buf.Ptr, "UTF-8")
     }
     c_str_put(val, tgt := this.struct_ptr(), offset := 0, encoding := "UTF-8") {
+        if not tgt
+            return Buffer()
         buf := RimeStruct.c_str(val, encoding)
         NumPut("Ptr", buf.Ptr, tgt, offset)
         return buf
@@ -96,6 +102,11 @@ class RimeStruct extends Class {
         return res
     }
     c_str_array_put(val_array, tgt := this.struct_ptr(), offset := 0, encoding := "UTF-8") {
+        if not tgt
+            return {
+                ptrs: Buffer(),
+                bufs: Array()
+            }
         arr_buf := RimeStruct.c_str_array(val_array, encoding)
         NumPut("Ptr", arr_buf.ptrs.Ptr, tgt, offset)
         return arr_buf
