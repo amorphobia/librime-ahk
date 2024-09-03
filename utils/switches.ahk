@@ -243,6 +243,31 @@ class RimeSwitches extends RimeStruct {
         return RimeSwitches.SwitchOption()
     }
 
+    /**
+     * Similar to API's `get_state_label_abbreviated`,
+     * but can be also used for non current schemas
+     * @param option_name `Str`, e.g. "ascii_mode"
+     * @param state `True` or `False`
+     * @param abbreviated `True` or `False`
+     * @returns {String} the label
+     */
+    get_state_label(option_name, state, abbreviated) {
+        local option := this.option_by_name(option_name)
+        if not option.found
+            return ""
+        if option.type = RimeSwitches.kToggleOption
+            return RimeSwitches._get_state_label(this.api, this.config, option.path, state, abbreviated)
+        if option.type = RimeSwitches.kRadioGroup {
+            ; if the query is a deselected option among the radio group, do not
+            ; display its state label; only show the selected option.
+            return state ? RimeSwitches._get_state_label(
+                this.api, this.config, option.path,
+                option.option_index, abbreviated
+            ) : ""
+        }
+        return ""
+    }
+
     _find_option_from_config_iter(iter, switch_index, callback) {
         if name := this.api.config_get_string(this.config, iter.path . "/name") {
             local option := RimeSwitches.SwitchOption(
@@ -267,5 +292,40 @@ class RimeSwitches extends RimeStruct {
             this.api.config_end(list_iter)
         }
         return RimeSwitches.SwitchOption()
+    }
+
+    static _get_state_label(rime_api, config, path, state_index, abbreviated) {
+        if not rime_api or not config or not path
+            return ""
+        if not state_size := rime_api.config_list_size(config, path . "/states") or state_size <= state_index
+            return ""
+        if abbreviated {
+            if not abbrev_size := rime_api.config_begin_list(config, path . "/abbrev") or abbrev_size <= state_index {
+                if not state_iter := rime_api.config_begin_list(config, path . "/sates")
+                    return ""
+                while rime_api.config_next(state_iter) {
+                    if A_Index - 1 != state_index
+                        continue
+                    if not value := rime_api.config_get_string(config, state_iter.path)
+                        continue
+                    rime_api.config_end(state_iter)
+                    return value
+                }
+                rime_api.config_end(state_iter)
+                return ""
+            }
+            if not abbrev_iter := rime_api.config_begin_list(config, path . "/abbrev")
+                return ""
+            while rime_api.config_next(abbrev_iter) {
+                if A_Index - 1 != state_index
+                    continue
+                if not value := rime_api.config_get_string(config, abbrev_iter.path)
+                    continue
+                rime_api.config_end(abbrev_iter)
+                return value
+            }
+            rime_api.config_end(abbrev_iter)
+            return ""
+        }
     }
 } ; RimeSwitches

@@ -1527,6 +1527,19 @@ class RimeApi extends RimeApiStruct {
     }
 
     /**
+     * Wrapper of API's `get_state_label_abbreviated`
+     * @param session_id type of `UInt`
+     * @param option_name type of `Str`
+     * @param state `True` or `False`
+     * @param abbreviated `True` or `False`
+     * @returns {Str} the label
+     */
+    get_state_label_string_abbreviated(session_id, option_name, state, abbreviated) {
+        slice := this.get_state_label_abbreviated(session_id, option_name, state, abbreviated)
+        return slice ? slice.slice : ""
+    }
+
+    /**
      * 
      * @param session_id type of `UInt`
      * @param input type of `Str`
