@@ -196,12 +196,12 @@ class RimeTraits extends RimeVersionedStruct {
         set => this.num_put(, Value, RimeTraits.data_size_offset())
     }
     shared_data_dir {
-        get => this.c_str_get(, RimeTraits.shared_data_dir_offset(), "CP0")
-        set => this.__shared_data_dir := this.c_str_put(Value, , RimeTraits.shared_data_dir_offset(), "CP0")
+        get => this.c_str_get(, RimeTraits.shared_data_dir_offset())
+        set => this.__shared_data_dir := this.c_str_put(Value, , RimeTraits.shared_data_dir_offset())
     }
     user_data_dir {
-        get => this.c_str_get(, RimeTraits.user_data_dir_offset(), "CP0")
-        set => this.__user_data_dir := this.c_str_put(Value, , RimeTraits.user_data_dir_offset(), "CP0")
+        get => this.c_str_get(, RimeTraits.user_data_dir_offset())
+        set => this.__user_data_dir := this.c_str_put(Value, , RimeTraits.user_data_dir_offset())
     }
     distribution_name {
         get => this.c_str_get(, RimeTraits.distribution_name_offset())
@@ -232,12 +232,12 @@ class RimeTraits extends RimeVersionedStruct {
         set => this.__log_dir := this.c_str_put(Value, , RimeTraits.log_dir_offset())
     }
     prebuilt_data_dir {
-        get => this.c_str_get(, RimeTraits.prebuilt_data_dir_offset(), "CP0")
-        set => this.__prebuilt_data_dir := this.c_str_put(Value, , RimeTraits.prebuilt_data_dir_offset(), "CP0")
+        get => this.c_str_get(, RimeTraits.prebuilt_data_dir_offset())
+        set => this.__prebuilt_data_dir := this.c_str_put(Value, , RimeTraits.prebuilt_data_dir_offset())
     }
     staging_dir {
-        get => this.c_str_get(, RimeTraits.staging_dir_offset(), "CP0")
-        set => this.__staging_dir := this.c_str_put(Value, , RimeTraits.staging_dir_offset(), "CP0")
+        get => this.c_str_get(, RimeTraits.staging_dir_offset())
+        set => this.__staging_dir := this.c_str_put(Value, , RimeTraits.staging_dir_offset())
     }
 } ; RimeTraits
 
