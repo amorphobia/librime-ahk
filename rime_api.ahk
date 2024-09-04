@@ -1117,6 +1117,22 @@ class RimeApi extends RimeApiStruct {
     }
 
     /**
+     * Test and get a string from the config
+     * 
+     * @param config type of `RimeConfig`
+     * @param key type of `Str`
+     * @param value pass by reference, type of `Str`
+     * @param {Integer} buffer_size default 512
+     * @returns `True` on success, `False` on failure
+     */
+    config_test_get_string(config, key, &value, buffer_size := Rime_BufferSize) {
+        buf := Buffer(buffer_size)
+        if res := DllCall(this.fp(RimeApi.config_get_string_offset()), "Ptr", config ? config.struct_ptr() : 0, "Ptr", RimeStruct.c_str(key).Ptr, "Ptr", buf.Ptr, "UInt", buffer_size, "CDecl Int")
+            value := StrGet(buf.Ptr, "UTF-8")
+        return res
+    }
+
+    /**
      * 
      * @param config type of `RimeConfig`
      * @param key type of `Str`
