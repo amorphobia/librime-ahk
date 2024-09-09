@@ -62,7 +62,7 @@
  * }
  * ```
  */
-class RimeSwitches extends RimeStruct {
+class RimeSwitches extends Object {
     /**
      * 
      * @param rime `RimeApi` released by caller
@@ -80,7 +80,7 @@ class RimeSwitches extends RimeStruct {
         get => 1
     }
 
-    class SwitchOption extends RimeStruct {
+    class SwitchOption extends Object {
         __New(caller := 0, path := "", type := RimeSwitches.kToggleOption, name := "", switch_index := 0, option_index := 0) {
             if caller {
                 this.path := path

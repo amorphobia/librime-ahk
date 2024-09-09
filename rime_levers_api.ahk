@@ -15,6 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
  */
+
 #Include rime_api.ahk
 
 ; Placeholder class processes the pointer to rime class `CustomSettings`. Do not presume the memory layout
@@ -65,9 +66,9 @@ class RimeLeversApi extends RimeApiStruct {
     __New(rime := RimeApi()) {
         this.buff := Buffer(RimeLeversApi.struct_size, 0)
         if not rime or not this.module := rime.find_module("levers")
-            throw Error("获取 Levers API 失败！")
+            throw RimeError("Cannot find module levers.")
         if not ptr := this.module.get_api()
-            throw Error("获取 Levers API 失败！")
+            throw RimeError("Failed to get levers API.")
         this.copy(ptr)
     }
 

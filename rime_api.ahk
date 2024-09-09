@@ -21,6 +21,10 @@ global A_IntSize := 4
 global A_IntPaddingSize := A_PtrSize - A_IntSize
 global Rime_BufferSize := 512
 
+class RimeError extends Error {
+    ; 
+}
+
 /**
  * The base class to wrap a struct in librime
  * 
@@ -140,9 +144,9 @@ class RimeVersionedStruct extends RimeStruct {
      */
     has_member(member) {
         offset := member . "_offset"
-        if not %Type(this)%.HasMethod(offset)
+        if not %Type(this)%.HasOwnProp(offset)
             return False
-        return this.data_size + A_IntSize > %Type(this)%.%offset%()
+        return this.data_size + A_IntSize > %Type(this)%.%offset%
     }
 
     /**
@@ -151,7 +155,7 @@ class RimeVersionedStruct extends RimeStruct {
      * @returns `True` if member has value, `False` if no member or null
      */
     provided(member) {
-        return this.has_member(member) and this.%member%
+        return this.has_member(member) and !!this.%member%
     }
 }
 
@@ -166,7 +170,7 @@ class RimeApiStruct extends RimeVersionedStruct {
      * @returns `True` if API available, `False` if not
      */
     api_available(func) {
-        return this.has_member(func) and this.%func%
+        return this.has_member(func) and !!this.%func%
     }
 }
 
@@ -621,15 +625,15 @@ class RimeApi extends RimeApiStruct {
                 RimeApi.rimeDll := DllCall("LoadLibrary", "Str", weasel_root . "\rime.dll", "Ptr")
 
             if not RimeApi.rimeDll
-                throw Error("未找到 rime.dll！")
+                throw RimeError("The library rime.dll not found.")
         }
 
         this.buff := Buffer(RimeApi.struct_size, 0)
         if not ptr := DllCall("rime\rime_get_api", "CDecl Ptr")
-            throw Error("获取 Rime API 失败！")
+            throw RimeError("Failed to get rime API.")
         this.copy(ptr)
         if VerCompare(this.get_version(), RimeApi.min_version) < 0
-            throw Error("Librime 版本过低，请使用 1.8.5 及以上版本。")
+            throw RimeError(Format("Current librime version {} is smaller than required {}.", this.get_version(), RimeApi.min_version))
     }
 
     static rimeDll := DllCall("LoadLibrary", "Str", "rime.dll", "Ptr")
