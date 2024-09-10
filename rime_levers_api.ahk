@@ -19,43 +19,38 @@
 #Include rime_api.ahk
 
 ; Placeholder class processes the pointer to rime class `CustomSettings`. Do not presume the memory layout
-class RimeCustomSettings extends RimeStruct {
+class RimeCustomSettings extends Object {
     __New(ptr := 0) {
-        this.placeholder := ptr
+        this.Ptr := ptr
     }
-    struct_ptr := (*) => this.placeholder
 }
 
 ; Placeholder class processes the pointer to rime class `SwitcherSettings`. Do not presume the memory layout
-class RimeSwitcherSettings extends RimeStruct {
+class RimeSwitcherSettings extends Object {
     __New(ptr := 0) {
-        this.placeholder := ptr
+        this.Ptr := ptr
     }
-    struct_ptr := (*) => this.placeholder
 }
 
 ; Placeholder class processes the pointer to rime class `SchemaInfo`. Do not presume the memory layout
-class RimeSchemaInfo extends RimeStruct {
+class RimeSchemaInfo extends Object {
     /**
      * 
      * @param `RimeSchemaListItem` item
      */
     __New(item := 0) {
-        this.placeholder := item ? item.reserved : 0
+        this.Ptr := item ? item.reserved : 0
     }
-    struct_ptr := (*) => this.placeholder
 }
 
 class RimeUserDictIterator extends RimeStruct {
     __New() {
-        this.buff := Buffer(RimeUserDictIterator.struct_size, 0)
+        super.__New(RimeUserDictIterator.struct_size, 0)
     }
 
     static ptr_offset := 0
     static i_offset := RimeUserDictIterator.ptr_offset + A_PtrSize
     static struct_size := RimeUserDictIterator.i_offset + A_PtrSize ; size_t
-
-    struct_ptr := (*) => this.buff.Ptr
 
     i {
         get => this.num_get(RimeUserDictIterator.i_offset, "UInt") ; size_t
@@ -64,7 +59,7 @@ class RimeUserDictIterator extends RimeStruct {
 
 class RimeLeversApi extends RimeApiStruct {
     __New(rime := RimeApi()) {
-        this.buff := Buffer(RimeLeversApi.struct_size, 0)
+        super.__New(RimeLeversApi.struct_size, 0)
         if not rime or not this.module := rime.find_module("levers")
             throw RimeError("Cannot find module levers.")
         if not ptr := this.module.get_api()
@@ -107,8 +102,6 @@ class RimeLeversApi extends RimeApiStruct {
     static customize_item_offset := RimeLeversApi.import_user_dict_offset + A_PtrSize
     static struct_size := RimeLeversApi.customize_item_offset + A_PtrSize
 
-    struct_ptr := (*) => this.buff.Ptr
-
     /**
      * 
      * @param config_id type of `Str`
@@ -116,7 +109,7 @@ class RimeLeversApi extends RimeApiStruct {
      * @returns `RimeCustomSettings` on success, `0` on failure
      */
     custom_settings_init(config_id, generator_id) {
-        if not ptr := DllCall(this.fp(RimeLeversApi.custom_settings_init_offset), "Ptr", RimeStruct.c_str(config_id).Ptr, "Ptr", RimeStruct.c_str(generator_id).Ptr, "CDecl Ptr")
+        if not ptr := DllCall(this.fp(RimeLeversApi.custom_settings_init_offset), "Ptr", RimeString(config_id), "Ptr", RimeString(generator_id), "CDecl Ptr")
             return 0
         return RimeCustomSettings(ptr)
     }
@@ -126,7 +119,7 @@ class RimeLeversApi extends RimeApiStruct {
      * @param settings type of `RimeCustomSettings`
      */
     custom_settings_destroy(settings) {
-        DllCall(this.fp(RimeLeversApi.custom_settings_destroy_offset), "Ptr", settings ? settings.struct_ptr() : 0, "CDecl")
+        DllCall(this.fp(RimeLeversApi.custom_settings_destroy_offset), "Ptr", settings, "CDecl")
     }
 
     /**
@@ -135,7 +128,7 @@ class RimeLeversApi extends RimeApiStruct {
      * @returns `True` on success, `False` on failure
      */
     load_settings(settings) {
-        return DllCall(this.fp(RimeLeversApi.load_settings_offset), "Ptr", settings ? settings.struct_ptr() : 0, "CDecl Int")
+        return DllCall(this.fp(RimeLeversApi.load_settings_offset), "Ptr", settings, "CDecl Int")
     }
 
     /**
@@ -144,7 +137,7 @@ class RimeLeversApi extends RimeApiStruct {
      * @returns `True` on success, `False` on failure
      */
     save_settings(settings) {
-        return DllCall(this.fp(RimeLeversApi.save_settings_offset), "Ptr", settings ? settings.struct_ptr() : 0, "CDecl Int")
+        return DllCall(this.fp(RimeLeversApi.save_settings_offset), "Ptr", settings, "CDecl Int")
     }
 
     /**
@@ -155,7 +148,7 @@ class RimeLeversApi extends RimeApiStruct {
      * @returns `True` on success, `False` on failure
      */
     customize_bool(settings, key, value) {
-        return DllCall(this.fp(RimeLeversApi.customize_bool_offset), "Ptr", settings ? settings.struct_ptr() : 0, "Ptr", RimeStruct.c_str(key).Ptr, "Int", value, "CDecl Int")
+        return DllCall(this.fp(RimeLeversApi.customize_bool_offset), "Ptr", settings, "Ptr", RimeString(key), "Int", value, "CDecl Int")
     }
 
     /**
@@ -166,7 +159,7 @@ class RimeLeversApi extends RimeApiStruct {
      * @returns `True` on success, `False` on failure
      */
     customize_int(settings, key, value) {
-        return DllCall(this.fp(RimeLeversApi.customize_int_offset), "Ptr", settings ? settings.struct_ptr() : 0, "Ptr", RimeStruct.c_str(key).Ptr, "Int", value, "CDecl Int")
+        return DllCall(this.fp(RimeLeversApi.customize_int_offset), "Ptr", settings, "Ptr", RimeString(key), "Int", value, "CDecl Int")
     }
 
     /**
@@ -177,7 +170,7 @@ class RimeLeversApi extends RimeApiStruct {
      * @returns `True` on success, `False` on failure
      */
     customize_double(settings, key, value) {
-        return DllCall(this.fp(RimeLeversApi.customize_double_offset), "Ptr", settings ? settings.struct_ptr() : 0, "Ptr", RimeStruct.c_str(key).Ptr, "Double", value, "CDecl Int")
+        return DllCall(this.fp(RimeLeversApi.customize_double_offset), "Ptr", settings, "Ptr", RimeString(key), "Double", value, "CDecl Int")
     }
 
     /**
@@ -188,7 +181,7 @@ class RimeLeversApi extends RimeApiStruct {
      * @returns `True` on success, `False` on failure
      */
     customize_string(settings, key, value) {
-        return DllCall(this.fp(RimeLeversApi.customize_string_offset), "Ptr", settings ? settings.struct_ptr() : 0, "Ptr", RimeStruct.c_str(key).Ptr, "Ptr", RimeStruct.c_str(value).Ptr, "CDecl Int")
+        return DllCall(this.fp(RimeLeversApi.customize_string_offset), "Ptr", settings, "Ptr", RimeString(key), "Ptr", RimeString(value), "CDecl Int")
     }
 
     /**
@@ -197,7 +190,7 @@ class RimeLeversApi extends RimeApiStruct {
      * @returns `True` or `False`
      */
     is_first_run(settings) {
-        return DllCall(this.fp(RimeLeversApi.is_first_run_offset), "Ptr", settings ? settings.struct_ptr() : 0, "CDecl Int")
+        return DllCall(this.fp(RimeLeversApi.is_first_run_offset), "Ptr", settings, "CDecl Int")
     }
 
     /**
@@ -206,7 +199,7 @@ class RimeLeversApi extends RimeApiStruct {
      * @returns `True` or `False`
      */
     settings_is_modified(settings) {
-        return DllCall(this.fp(RimeLeversApi.settings_is_modified_offset), "Ptr", settings ? settings.struct_ptr() : 0, "CDecl Int")
+        return DllCall(this.fp(RimeLeversApi.settings_is_modified_offset), "Ptr", settings, "CDecl Int")
     }
 
     /**
@@ -216,7 +209,7 @@ class RimeLeversApi extends RimeApiStruct {
      */
     settings_get_config(settings) {
         config := RimeConfig()
-        res := DllCall(this.fp(RimeLeversApi.settings_get_config_offset), "Ptr", settings ? settings.struct_ptr() : 0, "Ptr", config.struct_ptr(), "CDecl Int")
+        res := DllCall(this.fp(RimeLeversApi.settings_get_config_offset), "Ptr", settings, "Ptr", config, "CDecl Int")
         return res ? config : 0
     }
 
@@ -237,7 +230,7 @@ class RimeLeversApi extends RimeApiStruct {
      */
     get_available_schema_list(settings) {
         list := RimeSchemaList()
-        res := DllCall(this.fp(RimeLeversApi.get_available_schema_list_offset), "Ptr", settings ? settings.struct_ptr() : 0, "Ptr", list.struct_ptr(), "CDecl Int")
+        res := DllCall(this.fp(RimeLeversApi.get_available_schema_list_offset), "Ptr", settings, "Ptr", list, "CDecl Int")
         return res ? list : 0
     }
 
@@ -248,7 +241,7 @@ class RimeLeversApi extends RimeApiStruct {
      */
     get_selected_schema_list(settings) {
         list := RimeSchemaList()
-        res := DllCall(this.fp(RimeLeversApi.get_selected_schema_list_offset), "Ptr", settings ? settings.struct_ptr() : 0, "Ptr", list.struct_ptr(), "CDecl Int")
+        res := DllCall(this.fp(RimeLeversApi.get_selected_schema_list_offset), "Ptr", settings, "Ptr", list, "CDecl Int")
         return res ? list : 0
     }
 
@@ -257,7 +250,7 @@ class RimeLeversApi extends RimeApiStruct {
      * @param list type of `RimeSchemaList`
      */
     schema_list_destroy(list) {
-        DllCall(this.fp(RimeLeversApi.schema_list_destroy_offset), "Ptr", list ? list.struct_ptr() : 0, "CDecl")
+        DllCall(this.fp(RimeLeversApi.schema_list_destroy_offset), "Ptr", list, "CDecl")
     }
 
     /**
@@ -266,7 +259,7 @@ class RimeLeversApi extends RimeApiStruct {
      * @returns `Str`
      */
     get_schema_id(info) {
-        p := DllCall(this.fp(RimeLeversApi.get_schema_id_offset), "Ptr", info ? info.struct_ptr() : 0, "CDecl Ptr")
+        p := DllCall(this.fp(RimeLeversApi.get_schema_id_offset), "Ptr", info, "CDecl Ptr")
         return p ? StrGet(p, "UTF-8") : ""
     }
 
@@ -276,7 +269,7 @@ class RimeLeversApi extends RimeApiStruct {
      * @returns `Str`
      */
     get_schema_name(info) {
-        p := DllCall(this.fp(RimeLeversApi.get_schema_name_offset), "Ptr", info ? info.struct_ptr() : 0, "CDecl Ptr")
+        p := DllCall(this.fp(RimeLeversApi.get_schema_name_offset), "Ptr", info, "CDecl Ptr")
         return p ? StrGet(p, "UTF-8") : ""
     }
 
@@ -286,7 +279,7 @@ class RimeLeversApi extends RimeApiStruct {
      * @returns `Str`
      */
     get_schema_version(info) {
-        p := DllCall(this.fp(RimeLeversApi.get_schema_version_offset), "Ptr", info ? info.struct_ptr() : 0, "CDecl Ptr")
+        p := DllCall(this.fp(RimeLeversApi.get_schema_version_offset), "Ptr", info, "CDecl Ptr")
         return p ? StrGet(p, "UTF-8") : ""
     }
 
@@ -296,7 +289,7 @@ class RimeLeversApi extends RimeApiStruct {
      * @returns `Str`
      */
     get_schema_author(info) {
-        p := DllCall(this.fp(RimeLeversApi.get_schema_author_offset), "Ptr", info ? info.struct_ptr() : 0, "CDecl Ptr")
+        p := DllCall(this.fp(RimeLeversApi.get_schema_author_offset), "Ptr", info, "CDecl Ptr")
         return p ? StrGet(p, "UTF-8") : ""
     }
 
@@ -306,7 +299,7 @@ class RimeLeversApi extends RimeApiStruct {
      * @returns `Str`
      */
     get_schema_description(info) {
-        p := DllCall(this.fp(RimeLeversApi.get_schema_description_offset), "Ptr", info ? info.struct_ptr() : 0, "CDecl Ptr")
+        p := DllCall(this.fp(RimeLeversApi.get_schema_description_offset), "Ptr", info, "CDecl Ptr")
         return p ? StrGet(p, "UTF-8") : ""
     }
 
@@ -316,7 +309,7 @@ class RimeLeversApi extends RimeApiStruct {
      * @returns `Str`
      */
     get_schema_file_path(info) {
-        p := DllCall(this.fp(RimeLeversApi.get_schema_file_path_offset), "Ptr", info ? info.struct_ptr() : 0, "CDecl Ptr")
+        p := DllCall(this.fp(RimeLeversApi.get_schema_file_path_offset), "Ptr", info, "CDecl Ptr")
         return p ? StrGet(p, "UTF-8") : ""
     }
 
@@ -327,8 +320,8 @@ class RimeLeversApi extends RimeApiStruct {
      * @returns `True` on success, `False` on failure
      */
     select_schemas(settings, schema_id_list) {
-        arr := RimeStruct.c_str_array(schema_id_list)
-        return DllCall(this.fp(RimeLeversApi.select_schemas_offset), "Ptr", settings ? settings.struct_ptr() : 0, "Ptr", arr.str_ptrs, "Int", arr.str_bufs.Length, "CDecl Int")
+        arr := RimeStringArray(schema_id_list)
+        return DllCall(this.fp(RimeLeversApi.select_schemas_offset), "Ptr", settings, "Ptr", arr.str_ptrs, "Int", schema_id_list.Length, "CDecl Int")
     }
 
     /**
@@ -337,7 +330,7 @@ class RimeLeversApi extends RimeApiStruct {
      * @returns `Str`
      */
     get_hotkeys(settings) {
-        p := DllCall(this.fp(RimeLeversApi.get_hotkeys_offset), "Ptr", settings ? settings.struct_ptr() : 0, "CDecl Ptr")
+        p := DllCall(this.fp(RimeLeversApi.get_hotkeys_offset), "Ptr", settings, "CDecl Ptr")
         return p ? StrGet(p, "UTF-8") : ""
     }
  
@@ -348,7 +341,7 @@ class RimeLeversApi extends RimeApiStruct {
      * @returns `True` on success, `False` on failure
      */
     set_hotkeys(settings, hotkeys) {
-        return DllCall(this.fp(RimeLeversApi.set_hotkeys_offset), "Ptr", settings ? settings.struct_ptr() : 0, "Ptr", RimeStruct.c_str(hotkeys).Ptr, "CDecl Int")
+        return DllCall(this.fp(RimeLeversApi.set_hotkeys_offset), "Ptr", settings, "Ptr", RimeString(hotkeys), "CDecl Int")
     }
 
     /**
@@ -357,7 +350,7 @@ class RimeLeversApi extends RimeApiStruct {
      */
     user_dict_iterator_init() {
         iter := RimeUserDictIterator()
-        res := DllCall(this.fp(RimeLeversApi.user_dict_iterator_init_offset), "Ptr", iter.struct_ptr(), "CDecl Int")
+        res := DllCall(this.fp(RimeLeversApi.user_dict_iterator_init_offset), "Ptr", iter, "CDecl Int")
         return res ? iter : 0
     }
 
@@ -366,7 +359,7 @@ class RimeLeversApi extends RimeApiStruct {
      * @param iter type of `RimeUserDictIterator`
      */
     user_dict_iterator_destroy(iter) {
-        DllCall(this.fp(RimeLeversApi.user_dict_iterator_destroy_offset), "Ptr", iter ? iter.struct_ptr() : 0, "CDecl")
+        DllCall(this.fp(RimeLeversApi.user_dict_iterator_destroy_offset), "Ptr", iter, "CDecl")
     }
 
     /**
@@ -375,7 +368,7 @@ class RimeLeversApi extends RimeApiStruct {
      * @returns `Str`
      */
     next_user_dict(iter) {
-        p := DllCall(this.fp(RimeLeversApi.next_user_dict_offset), "Ptr", iter ? iter.struct_ptr() : 0, "CDecl Ptr")
+        p := DllCall(this.fp(RimeLeversApi.next_user_dict_offset), "Ptr", iter, "CDecl Ptr")
         return p ? StrGet(p, "UTF-8") : ""
     }
 
@@ -385,7 +378,7 @@ class RimeLeversApi extends RimeApiStruct {
      * @returns `True` on success, `False` on failure
      */
     backup_user_dict(dict_name) {
-        return DllCall(this.fp(RimeLeversApi.backup_user_dict_offset), "Ptr", RimeStruct.c_str(dict_name).Ptr, "CDecl Int")
+        return DllCall(this.fp(RimeLeversApi.backup_user_dict_offset), "Ptr", RimeString(dict_name), "CDecl Int")
     }
 
     /**
@@ -394,7 +387,7 @@ class RimeLeversApi extends RimeApiStruct {
      * @returns `True` on success, `False` on failure
      */
     restore_user_dict(snapshot_file) {
-        return DllCall(this.fp(RimeLeversApi.restore_user_dict_offset), "Ptr", RimeStruct.c_str(snapshot_file).Ptr, "CDecl Int")
+        return DllCall(this.fp(RimeLeversApi.restore_user_dict_offset), "Ptr", RimeString(snapshot_file), "CDecl Int")
     }
 
     /**
@@ -404,7 +397,7 @@ class RimeLeversApi extends RimeApiStruct {
      * @returns `Int`
      */
     export_user_dict(dict_name, text_file) {
-        return DllCall(this.fp(RimeLeversApi.export_user_dict_offset), "Ptr", RimeStruct.c_str(dict_name).Ptr, "Ptr", RimeStruct.c_str(text_file).Ptr, "CDecl Int")
+        return DllCall(this.fp(RimeLeversApi.export_user_dict_offset), "Ptr", RimeString(dict_name), "Ptr", RimeString(text_file), "CDecl Int")
     }
 
     /**
@@ -414,7 +407,7 @@ class RimeLeversApi extends RimeApiStruct {
      * @returns `Int`
      */
     import_user_dict(dict_name, text_file) {
-        return DllCall(this.fp(RimeLeversApi.import_user_dict_offset), "Ptr", RimeStruct.c_str(dict_name).Ptr, "Ptr", RimeStruct.c_str(text_file).Ptr, "CDecl Int")
+        return DllCall(this.fp(RimeLeversApi.import_user_dict_offset), "Ptr", RimeString(dict_name), "Ptr", RimeString(text_file), "CDecl Int")
     }
 
     /**
@@ -425,6 +418,6 @@ class RimeLeversApi extends RimeApiStruct {
      * @returns `True` on success, `False` on failure
      */
     customize_item(settings, key, value) {
-        return DllCall(this.fp(RimeLeversApi.customize_item_offset), "Ptr", settings ? settings.struct_ptr() : 0, "Ptr", RimeStruct.c_str(key).Ptr, "Ptr", value ? value.struct_ptr() : 0, "CDecl Int")
+        return DllCall(this.fp(RimeLeversApi.customize_item_offset), "Ptr", settings, "Ptr", RimeString(key), "Ptr", value, "CDecl Int")
     }
 }
