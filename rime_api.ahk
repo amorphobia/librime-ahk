@@ -597,7 +597,11 @@ class RimeModule extends RimeVersionedStruct {
 } ; RimeModule
 
 class RimeApi extends RimeApiStruct {
-    __New() {
+    __New(dll_path := "") {
+        try {
+            if dll_path && dll := DllCall("LoadLibrary", "Str", dll_path, "Ptr")
+                RimeApi.rimeDll := dll
+        }
         if not RimeApi.rimeDll {
             if librime_lib_dir := EnvGet("LIBRIME_LIB_DIR")
                 RimeApi.rimeDll := DllCall("LoadLibrary", "Str", librime_lib_dir . "\rime.dll", "Ptr")
