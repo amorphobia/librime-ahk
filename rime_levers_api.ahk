@@ -321,7 +321,7 @@ class RimeLeversApi extends RimeApiStruct {
      */
     select_schemas(settings, schema_id_list) {
         arr := RimeStringArray(schema_id_list)
-        return DllCall(this.fp(RimeLeversApi.select_schemas_offset), "Ptr", settings, "Ptr", arr.str_ptrs, "Int", schema_id_list.Length, "CDecl Int")
+        return DllCall(this.fp(RimeLeversApi.select_schemas_offset), "Ptr", settings, "Ptr", arr, "Int", schema_id_list.Length, "CDecl Int")
     }
 
     /**
