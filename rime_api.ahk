@@ -904,11 +904,13 @@ class RimeApi extends RimeApiStruct {
         return res ? StrGet(buf, "UTF-8") : ""
     }
 
-    ; () => RimeSchemaList or 0
+    ; () => RimeSchemaList
     get_schema_list() {
         list := RimeSchemaList()
         res := DllCall(this.fp(RimeApi.get_schema_list_offset), "Ptr", list, "CDecl Int")
-        return res ? list : 0
+        if !!res ^ !!list.size
+            throw RimeError("get_schema_list result & list size mismatch")
+        return list
     }
 
     ; (RimeSchemaList) => void

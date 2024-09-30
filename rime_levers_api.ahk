@@ -231,18 +231,22 @@ class RimeLeversApi extends RimeApiStruct {
     get_available_schema_list(settings) {
         list := RimeSchemaList()
         res := DllCall(this.fp(RimeLeversApi.get_available_schema_list_offset), "Ptr", settings, "Ptr", list, "CDecl Int")
-        return res ? list : 0
+        if !!res ^ !!list.size
+            throw RimeError("levers get_available_schema_list result & list size mismatch")
+        return list
     }
 
     /**
      * 
      * @param settings type of `RimeSwitcherSettings`
-     * @returns `RimeSchemaList` on success, `0` on failure
+     * @returns `RimeSchemaList`
      */
     get_selected_schema_list(settings) {
         list := RimeSchemaList()
         res := DllCall(this.fp(RimeLeversApi.get_selected_schema_list_offset), "Ptr", settings, "Ptr", list, "CDecl Int")
-        return res ? list : 0
+        if !!res ^ !!list.size
+            throw RimeError("levers get_selected_schema_list result & list size mismatch")
+        return list
     }
 
     /**
