@@ -334,6 +334,33 @@ class RimeCandidate extends RimeStruct {
     }
 } ; RimeCandidate
 
+class RimeCandidatePreview extends RimeVersionedStruct {
+    __New(ptr := 0) {
+        super.__New(RimeCandidatePreview.struct_size, 0)
+        this.data_size := RimeCandidatePreview.struct_size - A_IntSize
+        this.copy(ptr)
+    }
+
+    static data_size_offset := 0
+    static text_before_selection_offset := RimeCandidatePreview.data_size_offset + A_IntSize + A_IntPaddingSize
+    static selected_text_offset := RimeCandidatePreview.text_before_selection_offset + A_PtrSize
+    static text_after_selection_offset := RimeCandidatePreview.selected_text_offset + A_PtrSize
+    static struct_size := RimeCandidatePreview.text_after_selection_offset + A_PtrSize
+
+    data_size {
+        set => this.num_put(, Value, RimeCandidatePreview.data_size_offset)
+    }
+    text_before_selection {
+        get => this.c_str_get(, RimeCandidatePreview.text_before_selection_offset)
+    }
+    selected_text {
+        get => this.c_str_get(, RimeCandidatePreview.selected_text_offset)
+    }
+    text_after_selection {
+        get => this.c_str_get(, RimeCandidatePreview.text_after_selection_offset)
+    }
+} ; RimeCandidatePreview
+
 class RimeMenu extends RimeStruct {
     __New(ptr := 0) {
         super.__New(RimeMenu.struct_size, 0)
@@ -784,7 +811,9 @@ class RimeApi extends RimeApiStruct {
     static highlight_candidate_offset := RimeApi.get_sync_dir_s_offset + A_PtrSize
     static highlight_candidate_on_current_page_offset := RimeApi.highlight_candidate_offset + A_PtrSize
     static change_page_offset := RimeApi.highlight_candidate_on_current_page_offset + A_PtrSize
-    static struct_size := RimeApi.change_page_offset + A_PtrSize
+    static get_candidate_preview_offset := RimeApi.change_page_offset + A_PtrSize
+    static free_candidate_preview_offset := RimeApi.get_candidate_preview_offset + A_PtrSize
+    static struct_size := RimeApi.free_candidate_preview_offset + A_PtrSize
 
     ; (RimeTraits) => void
     setup(traits) {
@@ -1679,5 +1708,23 @@ class RimeApi extends RimeApiStruct {
         if not this.api_available("change_page")
             return 0
         return DllCall(this.fp(RimeApi.change_page_offset), "UPtr", session_id, "Int", backward, "CDecl Int")
+    }
+
+    ; get the preview of committing the highlighted candidate
+    get_candidate_preview(session_id) {
+        if not this.api_available("get_candidate_preview") {
+            return 0
+        }
+        preview := RimeCandidatePreview()
+        res := DllCall(this.fp(RimeApi.get_candidate_preview_offset), "UPtr", session_id, "Ptr", preview, "CDecl Int")
+        return res ? preview : 0
+    }
+
+    ; free a RimeCandidatePreview filled by get_candidate_preview
+    free_candidate_preview(preview) {
+        if not this.api_available("free_candidate_preview") {
+            return 0
+        }
+        return DllCall(this.fp(RimeApi.free_candidate_preview_offset), "Ptr", preview, "CDecl Int")
     }
 }

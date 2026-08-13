@@ -83,6 +83,32 @@ class RimeTraitsTests {
     }
 }
 
+class RimeCandidatePreviewTests {
+    Begin() {
+        this.preview := RimeCandidatePreview()
+        this.before := RimeString("before-")
+        this.selected := RimeString("选择")
+        this.after := RimeString("-after")
+        NumPut("Ptr", this.before.Ptr, this.preview, RimeCandidatePreview.text_before_selection_offset)
+        NumPut("Ptr", this.selected.Ptr, this.preview, RimeCandidatePreview.selected_text_offset)
+        NumPut("Ptr", this.after.Ptr, this.preview, RimeCandidatePreview.text_after_selection_offset)
+    }
+
+    Test_Basic() {
+        TestRunner.Assert(this.preview.data_size == 3 * A_PtrSize + A_IntPaddingSize)
+        TestRunner.Assert(this.preview.text_before_selection == "before-")
+        TestRunner.Assert(this.preview.selected_text == "选择")
+        TestRunner.Assert(this.preview.text_after_selection == "-after")
+    }
+
+    End() {
+        this.DeleteProp("preview")
+        this.DeleteProp("before")
+        this.DeleteProp("selected")
+        this.DeleteProp("after")
+    }
+}
+
 Class RimeApiTests {
     Begin() {
         api := RimeApi()
@@ -102,7 +128,8 @@ Class RimeApiTests {
     Test_All() {
         api := this.api
 
-        TestRunner.Assert(api.data_size == 98 * A_PtrSize + A_IntPaddingSize)
+        TestRunner.Assert(api.data_size >= 98 * A_PtrSize + A_IntPaddingSize)
+        TestRunner.Assert(RimeApi.struct_size == 101 * A_PtrSize)
 
         fn := "create_session"
         TestRunner.Assert(api.api_available(fn), Format(this.na_msg, fn))
@@ -120,6 +147,17 @@ Class RimeApiTests {
         status := api.get_status(test_session)
         TestRunner.Assert(0 !== status)
         TestRunner.Assert(!status.is_composing)
+
+        candidate_preview_available := api.api_available("get_candidate_preview")
+        TestRunner.Assert(candidate_preview_available == api.api_available("free_candidate_preview"))
+        preview := api.get_candidate_preview(test_session)
+        TestRunner.Assert(0 == preview)
+
+        if candidate_preview_available {
+            TestRunner.Assert(api.free_candidate_preview(RimeCandidatePreview()))
+        } else {
+            TestRunner.Assert(0 == api.free_candidate_preview(RimeCandidatePreview()))
+        }
 
         fn := "destroy_session"
         TestRunner.Assert(api.api_available(fn), Format(this.na_msg, fn))
@@ -147,7 +185,15 @@ Class RimeApiTests {
     Test_ApiCopiesLastFunctionPointer() {
         local ptr := DllCall("rime\rime_get_api", "CDecl Ptr")
 
-        TestRunner.Assert(this.api.fp(RimeApi.change_page_offset) == NumGet(ptr, RimeApi.change_page_offset, "Ptr"))
+        if this.api.api_available("free_candidate_preview") {
+            TestRunner.Assert(this.api.fp(RimeApi.free_candidate_preview_offset)
+                == NumGet(ptr, RimeApi.free_candidate_preview_offset, "Ptr"))
+        } else {
+            TestRunner.Assert(this.api.fp(RimeApi.change_page_offset)
+                == NumGet(ptr, RimeApi.change_page_offset, "Ptr"))
+            TestRunner.Assert(this.api.fp(RimeApi.get_candidate_preview_offset) == 0)
+            TestRunner.Assert(this.api.fp(RimeApi.free_candidate_preview_offset) == 0)
+        }
     }
 
     End() {
@@ -158,7 +204,8 @@ Class RimeApiTests {
     }
 }
 
-results := TestRunner.Run(RimeStringTests, RimeNullTerminatedStringArrayTests, RimeTraitsTests, RimeApiTests)
+results := TestRunner.Run(RimeStringTests, RimeNullTerminatedStringArrayTests, RimeTraitsTests,
+    RimeCandidatePreviewTests, RimeApiTests)
 failures := TestRunner.WriteJUnit(results, A_ScriptDir "\junit.xml")
 TestRunner.Print(results, "*")
 ExitApp(failures ? 1 : 0)
