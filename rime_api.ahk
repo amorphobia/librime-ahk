@@ -709,6 +709,7 @@ class RimeApi extends RimeApiStruct {
     }
 
     static rimeDll := DllCall("LoadLibrary", "Str", "rime.dll", "Ptr")
+    static notification_callback := 0
     static min_version := "1.8.5"
     static data_size_offset := 0
     static setup_offset := RimeApi.data_size_offset + A_IntSize + A_IntPaddingSize
@@ -835,7 +836,21 @@ class RimeApi extends RimeApiStruct {
      * @param context_object `Ptr` in ahk, `void *` in librime
      */
     set_notification_handler(handler, context_object) {
-        DllCall(this.fp(RimeApi.set_notification_handler_offset), "Ptr", CallbackCreate(handler, "C", 4), "Ptr", context_object, "CDecl")
+        local callback := 0
+        try {
+            callback := CallbackCreate(handler, "C", 4)
+            DllCall(this.fp(RimeApi.set_notification_handler_offset),
+                "Ptr", callback, "Ptr", context_object, "CDecl")
+        } catch Error as err {
+            if callback {
+                CallbackFree(callback)
+            }
+            throw RimeError("Failed to set notification handler: " . err.Message)
+        }
+        if RimeApi.notification_callback {
+            CallbackFree(RimeApi.notification_callback)
+        }
+        RimeApi.notification_callback := callback
     }
 
     ; (RimeTraits) => void
@@ -846,6 +861,10 @@ class RimeApi extends RimeApiStruct {
     ; () => void
     finalize() {
         DllCall(this.fp(RimeApi.finalize_offset), "CDecl")
+        if RimeApi.notification_callback {
+            CallbackFree(RimeApi.notification_callback)
+            RimeApi.notification_callback := 0
+        }
         RimeApi.rimeDll := 0
     }
 

@@ -110,6 +110,9 @@ class RimeCandidatePreviewTests {
 }
 
 Class RimeApiTests {
+    NoopNotification(context_object, session_id, message_type, message_value) {
+    }
+
     Begin() {
         api := RimeApi()
         traits := RimeTraits()
@@ -196,8 +199,30 @@ Class RimeApiTests {
         }
     }
 
+    Test_NotificationCallbackLifetime() {
+        local first_callback, notification_handler := ObjBindMethod(this, "NoopNotification")
+
+        this.api.set_notification_handler(notification_handler, 0)
+        first_callback := RimeApi.notification_callback
+        TestRunner.Assert(first_callback != 0)
+
+        this.api.set_notification_handler(notification_handler, 0)
+        TestRunner.Assert(RimeApi.notification_callback != 0)
+        TestRunner.Assert(RimeApi.notification_callback != first_callback)
+
+        first_callback := RimeApi.notification_callback
+        try {
+            this.api.set_notification_handler(0, 0)
+        } catch RimeError {
+            TestRunner.Assert(RimeApi.notification_callback == first_callback)
+            return
+        }
+        throw Error("Expected RimeError for an invalid notification handler.")
+    }
+
     End() {
         this.api.finalize()
+        TestRunner.Assert(RimeApi.notification_callback == 0)
         this.DeleteProp("api")
         this.DeleteProp("levers")
         this.DeleteProp("na_msg")
