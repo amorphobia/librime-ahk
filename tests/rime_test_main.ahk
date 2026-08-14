@@ -2,6 +2,7 @@
 
 #Include ..\rime_api.ahk
 #Include ..\rime_levers_api.ahk
+#Include ..\utils\yaml.ahk
 
 class RimeStringTests {
     Begin() {
@@ -109,6 +110,70 @@ class RimeCandidatePreviewTests {
     }
 }
 
+class RimeYamlTestApi {
+    __New(collection_type) {
+        this.collection_type := collection_type
+        this.events := []
+    }
+
+    config_load_string(yaml) => 1
+
+    config_begin_map(config, path) {
+        return config == 1 && this.collection_type == "map" ? {key: "child", step: 0} : 0
+    }
+
+    config_begin_list(config, path) {
+        return config == 1 && this.collection_type == "list" ? {key: "0", step: 0} : 0
+    }
+
+    config_next(iter) {
+        iter.step += 1
+        return iter.step == 1
+    }
+
+    config_get_item(config, key) => 2
+
+    config_close(config) {
+        this.events.Push("close:" . config)
+    }
+
+    config_end(iter) {
+        this.events.Push("end")
+    }
+}
+
+class RimeYamlFailingParser extends RimeYaml {
+    _parse_str(obj, &val) {
+        throw Error("Expected parse failure.")
+    }
+}
+
+class RimeYamlTests {
+    Test_MapCleanupOnFailure() {
+        this.AssertCleanup("map")
+    }
+
+    Test_ListCleanupOnFailure() {
+        this.AssertCleanup("list")
+    }
+
+    AssertCleanup(collection_type) {
+        local api := RimeYamlTestApi(collection_type), yaml := RimeYamlFailingParser(api)
+
+        try {
+            yaml.load("ignored")
+        } catch Error as err {
+            TestRunner.Equal("Expected parse failure.", err.Message)
+            TestRunner.Equal(3, api.events.Length)
+            TestRunner.Equal("close:2", api.events[1])
+            TestRunner.Equal("end", api.events[2])
+            TestRunner.Equal("close:1", api.events[3])
+            return
+        }
+        throw Error("Expected YAML parsing to fail.")
+    }
+}
+
 Class RimeApiTests {
     NoopNotification(context_object, session_id, message_type, message_value) {
     }
@@ -143,13 +208,21 @@ Class RimeApiTests {
         TestRunner.Assert(api.api_available(fn), Format(this.na_msg, fn))
         ctx := api.get_context(test_session)
         TestRunner.Assert(0 !== ctx)
-        TestRunner.Assert(0 == ctx.menu.num_candidates)
+        try {
+            TestRunner.Assert(0 == ctx.menu.num_candidates)
+        } finally {
+            TestRunner.Assert(api.free_context(ctx))
+        }
 
         fn := "get_status"
         TestRunner.Assert(api.api_available(fn), Format(this.na_msg, fn))
         status := api.get_status(test_session)
         TestRunner.Assert(0 !== status)
-        TestRunner.Assert(!status.is_composing)
+        try {
+            TestRunner.Assert(!status.is_composing)
+        } finally {
+            TestRunner.Assert(api.free_status(status))
+        }
 
         candidate_preview_available := api.api_available("get_candidate_preview")
         TestRunner.Assert(candidate_preview_available == api.api_available("free_candidate_preview"))
@@ -233,7 +306,7 @@ Class RimeApiTests {
 }
 
 results := TestRunner.Run(RimeStringTests, RimeNullTerminatedStringArrayTests, RimeTraitsTests,
-    RimeCandidatePreviewTests, RimeApiTests)
+    RimeCandidatePreviewTests, RimeYamlTests, RimeApiTests)
 failures := TestRunner.WriteJUnit(results, A_ScriptDir "\junit.xml")
 TestRunner.Print(results, "*")
 ExitApp(failures ? 1 : 0)

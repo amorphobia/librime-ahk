@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Xuesong Peng <pengxuesong.cn@gmail.com>
+ * Copyright (c) 2023 - 2026 Xuesong Peng <pengxuesong.cn@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -26,11 +26,16 @@ class RimeYaml extends RimeStruct {
     }
 
     load(yaml) {
-        if not config := this.api.config_load_string(yaml)
+        local config, obj, succ
+
+        if !(config := this.api.config_load_string(yaml))
             return 0
-        local succ := this._parse_obj(config, &obj)
-        this.api.config_close(config)
-        return succ ? obj : 0
+        try {
+            succ := this._parse_obj(config, &obj)
+            return succ ? obj : 0
+        } finally {
+            this.api.config_close(config)
+        }
     }
 
     _parse_obj(obj, &val) {
@@ -50,31 +55,47 @@ class RimeYaml extends RimeStruct {
     }
 
     _parse_map(obj, &val) {
-        if not iter := this.api.config_begin_map(obj, "/")
+        local inner, iter, v
+
+        if !(iter := this.api.config_begin_map(obj, "/"))
             return false
-        val := Map()
-        while this.api.config_next(iter) {
-            local inner := this.api.config_get_item(obj, iter.key)
-            if this._parse_obj(inner, &v)
-                val[iter.key] := v
-            this.api.config_close(inner)
+        try {
+            val := Map()
+            while this.api.config_next(iter) {
+                inner := this.api.config_get_item(obj, iter.key)
+                try {
+                    if this._parse_obj(inner, &v)
+                        val[iter.key] := v
+                } finally {
+                    this.api.config_close(inner)
+                }
+            }
+            return true
+        } finally {
+            this.api.config_end(iter)
         }
-        this.api.config_end(iter)
-        return true
     }
 
     _parse_arr(obj, &val) {
-        if not iter := this.api.config_begin_list(obj, "/")
+        local inner, iter, v
+
+        if !(iter := this.api.config_begin_list(obj, "/"))
             return false
-        val := []
-        while this.api.config_next(iter) {
-            local inner := this.api.config_get_item(obj, iter.key)
-            if this._parse_obj(inner, &v)
-                val.Push(v)
-            this.api.config_close(inner)
+        try {
+            val := []
+            while this.api.config_next(iter) {
+                inner := this.api.config_get_item(obj, iter.key)
+                try {
+                    if this._parse_obj(inner, &v)
+                        val.Push(v)
+                } finally {
+                    this.api.config_close(inner)
+                }
+            }
+            return true
+        } finally {
+            this.api.config_end(iter)
         }
-        this.api.config_end(iter)
-        return true
     }
 
     _parse_str(obj, &val) {
