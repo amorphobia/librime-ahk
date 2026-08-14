@@ -809,6 +809,7 @@ class RimeApi extends RimeApiStruct {
     static highlight_candidate_offset := RimeApi.get_sync_dir_s_offset + A_PtrSize
     static highlight_candidate_on_current_page_offset := RimeApi.highlight_candidate_offset + A_PtrSize
     static change_page_offset := RimeApi.highlight_candidate_on_current_page_offset + A_PtrSize
+    ; > librime 1.17.0
     static get_candidate_preview_offset := RimeApi.change_page_offset + A_PtrSize
     static free_candidate_preview_offset := RimeApi.get_candidate_preview_offset + A_PtrSize
     static struct_size := RimeApi.free_candidate_preview_offset + A_PtrSize
