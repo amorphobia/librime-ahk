@@ -674,16 +674,19 @@ class RimeApi extends RimeApiStruct {
     __New(dll_path := "") {
         local librime_lib_dir, weasel_root, ptr, real_size, copy_size
         if !RimeApi.rimeDll {
-            if !dll_path {
-                if (librime_lib_dir := EnvGet("LIBRIME_LIB_DIR")) {
-                    dll_path := librime_lib_dir . "\rime.dll"
-                } else if (weasel_root := RegRead("HKEY_LOCAL_MACHINE\Software\Rime\Weasel", "WeaselRoot", "")) {
-                    dll_path := weasel_root . "\rime.dll"
-                } else {
-                    dll_path := "rime.dll"
-                }
+            if dll_path {
+                RimeApi.rimeDll := RimeApi.try_load_rime_dll(dll_path)
             }
-            if !(RimeApi.rimeDll := DllCall("LoadLibrary", "Str", dll_path, "Ptr")) {
+            if !RimeApi.rimeDll && (librime_lib_dir := EnvGet("LIBRIME_LIB_DIR")) {
+                RimeApi.rimeDll := RimeApi.try_load_rime_dll(librime_lib_dir . "\rime.dll")
+            }
+            if !RimeApi.rimeDll && (weasel_root := RegRead("HKEY_LOCAL_MACHINE\Software\Rime\Weasel", "WeaselRoot", "")) {
+                RimeApi.rimeDll := RimeApi.try_load_rime_dll(weasel_root . "\rime.dll")
+            }
+            if !RimeApi.rimeDll {
+                RimeApi.rimeDll := RimeApi.try_load_rime_dll("rime.dll")
+            }
+            if !RimeApi.rimeDll {
                 throw RimeError("The library rime.dll not found.")
             }
         }
@@ -701,6 +704,14 @@ class RimeApi extends RimeApiStruct {
         if VerCompare(this.get_version(), RimeApi.min_version) < 0 {
             throw RimeError(Format("Current librime version {} is smaller than required {}.",
                 this.get_version(), RimeApi.min_version))
+        }
+    }
+
+    static try_load_rime_dll(dll_path) {
+        try {
+            return DllCall("LoadLibrary", "Str", dll_path, "Ptr")
+        } catch Error {
+            return 0
         }
     }
 

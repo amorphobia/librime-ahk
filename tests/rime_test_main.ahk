@@ -174,6 +174,20 @@ class RimeYamlTests {
     }
 }
 
+class RimeApiDllLoadingTests {
+    Test_LoadErrorsFallBack() {
+        local original_librime_lib_dir := EnvGet("LIBRIME_LIB_DIR")
+
+        try {
+            EnvSet("LIBRIME_LIB_DIR", A_Temp . "\missing-librime-directory")
+            local api := RimeApi({})
+            TestRunner.Assert(RimeApi.rimeDll != 0)
+        } finally {
+            EnvSet("LIBRIME_LIB_DIR", original_librime_lib_dir)
+        }
+    }
+}
+
 Class RimeApiTests {
     NoopNotification(context_object, session_id, message_type, message_value) {
     }
@@ -306,7 +320,7 @@ Class RimeApiTests {
 }
 
 results := TestRunner.Run(RimeStringTests, RimeNullTerminatedStringArrayTests, RimeTraitsTests,
-    RimeCandidatePreviewTests, RimeYamlTests, RimeApiTests)
+    RimeCandidatePreviewTests, RimeYamlTests, RimeApiDllLoadingTests, RimeApiTests)
 failures := TestRunner.WriteJUnit(results, A_ScriptDir "\junit.xml")
 TestRunner.Print(results, "*")
 ExitApp(failures ? 1 : 0)
