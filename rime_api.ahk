@@ -672,22 +672,18 @@ class RimeModule extends RimeVersionedStruct {
 
 class RimeApi extends RimeApiStruct {
     __New(dll_path := "") {
-        local dll, librime_lib_dir, weasel_root, ptr, real_size, copy_size
-        try {
-            if dll_path && (dll := DllCall("LoadLibrary", "Str", dll_path, "Ptr")) {
-                RimeApi.rimeDll := dll
-            }
-        }
+        local librime_lib_dir, weasel_root, ptr, real_size, copy_size
         if !RimeApi.rimeDll {
-            if (librime_lib_dir := EnvGet("LIBRIME_LIB_DIR")) {
-                RimeApi.rimeDll := DllCall("LoadLibrary", "Str", librime_lib_dir . "\rime.dll", "Ptr")
+            if !dll_path {
+                if (librime_lib_dir := EnvGet("LIBRIME_LIB_DIR")) {
+                    dll_path := librime_lib_dir . "\rime.dll"
+                } else if (weasel_root := RegRead("HKEY_LOCAL_MACHINE\Software\Rime\Weasel", "WeaselRoot", "")) {
+                    dll_path := weasel_root . "\rime.dll"
+                } else {
+                    dll_path := "rime.dll"
+                }
             }
-
-            if !RimeApi.rimeDll && (weasel_root := RegRead("HKEY_LOCAL_MACHINE\Software\Rime\Weasel", "WeaselRoot", "")) {
-                RimeApi.rimeDll := DllCall("LoadLibrary", "Str", weasel_root . "\rime.dll", "Ptr")
-            }
-
-            if !RimeApi.rimeDll {
+            if !(RimeApi.rimeDll := DllCall("LoadLibrary", "Str", dll_path, "Ptr")) {
                 throw RimeError("The library rime.dll not found.")
             }
         }
@@ -708,7 +704,8 @@ class RimeApi extends RimeApiStruct {
         }
     }
 
-    static rimeDll := DllCall("LoadLibrary", "Str", "rime.dll", "Ptr")
+    ; Keep the DLL loaded until process exit so every RimeApi instance shares one module reference.
+    static rimeDll := 0
     static notification_callback := 0
     static min_version := "1.8.5"
     static data_size_offset := 0
@@ -865,7 +862,6 @@ class RimeApi extends RimeApiStruct {
             CallbackFree(RimeApi.notification_callback)
             RimeApi.notification_callback := 0
         }
-        RimeApi.rimeDll := 0
     }
 
     ; (Int) => Int

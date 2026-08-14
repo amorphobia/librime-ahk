@@ -221,8 +221,11 @@ Class RimeApiTests {
     }
 
     End() {
+        local rime_dll := RimeApi.rimeDll
+
         this.api.finalize()
         TestRunner.Assert(RimeApi.notification_callback == 0)
+        TestRunner.Assert(RimeApi.rimeDll == rime_dll)
         this.DeleteProp("api")
         this.DeleteProp("levers")
         this.DeleteProp("na_msg")
