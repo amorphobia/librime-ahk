@@ -10,9 +10,9 @@ Ported from [rime_api_console.cc](https://github.com/rime/librime/blob/master/to
 & 'C:\Program Files\AutoHotkey\v2\AutoHotkey64.exe' rime_api_console.ahk
 ```
 
-## AHK Rime Module
+## Hello Rime Module
 
-Demonstrate the definitions of a custom Rime module and the associated API struct.
+Demonstrate a custom Rime module in three layers: its API ABI, the registration adapter, and the implementation.
 
 ```powershell
 & 'C:\Program Files\AutoHotkey\v2\AutoHotkey64.exe' rime_module.ahk | Write-Output
